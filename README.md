@@ -66,6 +66,35 @@ Beim allerersten Start werden automatisch angelegt:
 - Vier Beispiel-Leistungen (Herrenhaarschnitt, Waschen/Schneiden/Föhnen,
   Bart trimmen, Komplettpaket) — im Admin-Bereich unter „Leistungen“
   anpassen, deaktivieren oder neue hinzufügen.
+- Terminplanung: Zeitraster 30 Min., Pufferzeit 5 Min. nach jedem Termin
+  (änderbar im Admin-Bereich unter „Terminplanung“).
+
+## Terminplanung: Zeitraster, Pufferzeit, Dauer
+
+Drei Stellschrauben steuern gemeinsam, welche Uhrzeiten Kunden angeboten
+bekommen — alle im Admin-Bereich einstellbar, kein Code nötig:
+
+- **Dauer pro Leistung** (Tab „Leistungen“): Wie lange der jeweilige
+  Termin tatsächlich blockiert wird.
+- **Zeitraster** (Tab „Terminplanung“): In welchem Abstand mögliche
+  Startzeiten überhaupt angeboten werden (z.B. nur zur vollen und halben
+  Stunde statt alle 15 Minuten).
+- **Pufferzeit** (Tab „Terminplanung“): Zusätzliche Minuten, die nach
+  jedem Termin automatisch freigehalten werden (Aufräumen, Luft zum
+  Atmen) — der nächste Termin kann erst danach beginnen.
+
+## E-Mail-Benachrichtigungen (optional)
+
+Gibt ein Kunde bei der Buchung eine E-Mail-Adresse an, kann die App
+automatisch eine Bestätigung verschicken — und ihn informieren, falls der
+Termin storniert wird. Dafür in der `.env` die `SMTP_*`-Variablen setzen
+(siehe `.env.example`, funktioniert z.B. mit einem Gmail-App-Passwort oder
+einem kostenlosen Anbieter wie Brevo). Ohne SMTP-Konfiguration läuft die
+App ganz normal weiter, es werden dann einfach keine E-Mails verschickt.
+
+Telefonnummer bleibt reine Kontaktinfo für Rückrufe — SMS-Benachrichtigung
+würde einen zusätzlichen kostenpflichtigen Anbieter (z.B. Twilio)
+erfordern und ist aktuell nicht eingebaut.
 
 ## Wie die Verfügbarkeit berechnet wird
 
