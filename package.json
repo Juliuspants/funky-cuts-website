@@ -1,0 +1,21 @@
+{
+  "name": "friseur-website",
+  "version": "1.0.0",
+  "description": "Online-Terminbuchung für den Friseursalon mit Admin-Verwaltung",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "set-admin-password": "node scripts/set-admin-password.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.6",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2"
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  }
+}

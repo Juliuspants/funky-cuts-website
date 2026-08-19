@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Funky Cuts — Admin</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💈</text></svg>" />
+<link rel="stylesheet" href="/css/style.css" />
+<link rel="stylesheet" href="/admin/css/admin.css" />
+</head>
+<body>
+
+<div class="bg-blobs">
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+</div>
+
+<!-- Login -->
+<div class="login-wrap" id="loginView">
+  <div class="login-card">
+    <h1>Admin-Login</h1>
+    <p>Funky Cuts — Terminverwaltung</p>
+    <div class="field">
+      <label for="loginUser">Benutzername</label>
+      <input type="text" id="loginUser" autocomplete="username" />
+    </div>
+    <div class="field">
+      <label for="loginPass">Passwort</label>
+      <input type="password" id="loginPass" autocomplete="current-password" />
+    </div>
+    <button class="btn btn-primary btn-block" id="loginBtn">Anmelden</button>
+  </div>
+</div>
+
+<!-- Dashboard -->
+<div class="admin-shell hidden" id="dashboardView">
+  <div class="admin-topbar">
+    <div class="admin-title">
+      <span class="brand-mark" style="font-size:20px;">Funky Cuts</span>
+      <span class="who" id="whoLabel"></span>
+    </div>
+    <button class="btn btn-ghost" id="logoutBtn">Abmelden</button>
+  </div>
+
+  <div class="tab-row">
+    <button class="tab-btn active" data-tab="bookings">Termine</button>
+    <button class="tab-btn" data-tab="hours">Öffnungszeiten</button>
+    <button class="tab-btn" data-tab="blocked">Pausen &amp; Urlaub</button>
+    <button class="tab-btn" data-tab="services">Leistungen</button>
+  </div>
+
+  <!-- Bookings -->
+  <div class="tab-panel active" data-panel="bookings">
+    <div class="panel-head">
+      <h2>Kommende Termine</h2>
+    </div>
+    <div id="bookingsList"><div class="skeleton" style="height:60px; margin-bottom:10px;"></div></div>
+  </div>
+
+  <!-- Working hours -->
+  <div class="tab-panel" data-panel="hours">
+    <div class="panel-head">
+      <h2>Wöchentliche Öffnungszeiten</h2>
+    </div>
+    <div id="hoursList"></div>
+    <div class="save-bar">
+      <button class="btn btn-primary" id="saveHoursBtn">Speichern</button>
+    </div>
+  </div>
+
+  <!-- Blocked slots -->
+  <div class="tab-panel" data-panel="blocked">
+    <div class="panel-head">
+      <h2>Pausen &amp; Urlaub</h2>
+    </div>
+    <div class="add-block-form">
+      <div class="field" style="margin-bottom:0;">
+        <label for="blockDate">Datum blockieren</label>
+        <input type="date" id="blockDate" />
+      </div>
+      <button class="btn btn-primary" id="addBlockBtn">Hinzufügen</button>
+    </div>
+    <div id="blockedList"></div>
+  </div>
+
+  <!-- Services -->
+  <div class="tab-panel" data-panel="services">
+    <div class="panel-head">
+      <h2>Leistungen</h2>
+    </div>
+    <div class="inline-form">
+      <input type="text" id="newSvcName" placeholder="Name (z.B. Herrenhaarschnitt)" />
+      <input type="number" id="newSvcDuration" placeholder="Dauer (Min.)" min="5" step="5" />
+      <input type="number" id="newSvcPrice" placeholder="Preis (€)" min="0" step="0.5" />
+    </div>
+    <button class="btn btn-primary" id="addSvcBtn" style="margin-bottom:20px;">Leistung hinzufügen</button>
+    <div id="servicesList"></div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="/admin/js/admin.js"></script>
+</body>
+</html>
