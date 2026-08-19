@@ -19,7 +19,10 @@ app.use(express.json());
 app.use(cookieParser());
 
 app.get("/api/config", (req, res) => {
-  res.json({ salonName: process.env.SALON_NAME || "Friseursalon" });
+  res.json({
+    salonName: process.env.SALON_NAME || "Friseursalon",
+    contactEmail: process.env.CONTACT_EMAIL || null,
+  });
 });
 
 app.use("/api", publicRoutes);

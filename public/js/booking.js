@@ -333,7 +333,7 @@
   // ---------------- confetti ----------------
 
   function fireConfetti() {
-    const colors = ["#db5327", "#e7ab2e", "#5c7a4e", "#241a12"];
+    const colors = ["#ea6b47", "#eeb63a", "#7fa06c", "#fce3d8"];
     const count = 60;
     for (let i = 0; i < count; i++) {
       const piece = document.createElement("div");
@@ -353,9 +353,26 @@
     }
   }
 
+  // ---------------- footer ----------------
+
+  async function loadFooterContact() {
+    try {
+      const cfg = await api("/api/config");
+      const link = $("#footerEmail");
+      if (cfg.contactEmail && link) {
+        link.href = `mailto:${cfg.contactEmail}`;
+        link.textContent = cfg.contactEmail;
+      } else if (link) {
+        link.remove();
+      }
+    } catch (_) {
+      // Footer-Kontakt ist rein informativ, kein Fehler-Toast nötig.
+    }
+  }
+
   // ---------------- init ----------------
 
   (async function init() {
-    await Promise.all([loadServices(), loadWorkingHours()]);
+    await Promise.all([loadServices(), loadWorkingHours(), loadFooterContact()]);
   })();
 })();
