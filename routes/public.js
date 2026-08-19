@@ -1,6 +1,7 @@
 const express = require("express");
 const db = require("../db");
 const { getAvailableSlots, isSlotStillFree, timeToMinutes, minutesToTime } = require("../lib/availability");
+const mailer = require("../lib/mailer");
 
 const router = express.Router();
 
@@ -54,13 +55,22 @@ router.post("/bookings", (req, res) => {
     )
     .run(serviceId, String(name).trim(), String(phone).trim(), email ? String(email).trim() : null, note ? String(note).trim() : null, date, startTime, endTime);
 
-  res.status(201).json({
+  const booking = {
     id: result.lastInsertRowid,
     service: service.name,
+    customer_name: String(name).trim(),
+    customer_phone: String(phone).trim(),
+    customer_email: email ? String(email).trim() : null,
     date,
     startTime,
     endTime,
-  });
+  };
+
+  res.status(201).json(booking);
+
+  // Läuft nach der Antwort — ein langsamer/fehlender Mailserver darf die Buchung selbst nie verzögern oder blockieren.
+  mailer.sendBookingConfirmation(booking).catch((err) => console.error("Bestätigungs-E-Mail fehlgeschlagen:", err.message));
+  mailer.sendAdminNewBookingNotice(booking).catch((err) => console.error("Admin-Benachrichtigung fehlgeschlagen:", err.message));
 });
 
 module.exports = router;

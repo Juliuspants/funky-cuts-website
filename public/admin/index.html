@@ -10,11 +10,7 @@
 </head>
 <body>
 
-<div class="bg-blobs">
-  <div class="blob blob-1"></div>
-  <div class="blob blob-2"></div>
-  <div class="blob blob-3"></div>
-</div>
+<div class="stripe-bar"></div>
 
 <!-- Login -->
 <div class="login-wrap" id="loginView">
@@ -37,7 +33,7 @@
 <div class="admin-shell hidden" id="dashboardView">
   <div class="admin-topbar">
     <div class="admin-title">
-      <span class="brand-mark" style="font-size:20px;">Funky Cuts</span>
+      <span class="brand-mark display" style="font-size:22px;">Funky <span class="hl">Cuts</span></span>
       <span class="who" id="whoLabel"></span>
     </div>
     <button class="btn btn-ghost" id="logoutBtn">Abmelden</button>
@@ -48,6 +44,7 @@
     <button class="tab-btn" data-tab="hours">Öffnungszeiten</button>
     <button class="tab-btn" data-tab="blocked">Pausen &amp; Urlaub</button>
     <button class="tab-btn" data-tab="services">Leistungen</button>
+    <button class="tab-btn" data-tab="settings">Terminplanung</button>
   </div>
 
   <!-- Bookings -->
@@ -96,6 +93,45 @@
     </div>
     <button class="btn btn-primary" id="addSvcBtn" style="margin-bottom:20px;">Leistung hinzufügen</button>
     <div id="servicesList"></div>
+  </div>
+
+  <!-- Scheduling settings -->
+  <div class="tab-panel" data-panel="settings">
+    <div class="panel-head">
+      <h2>Terminplanung</h2>
+    </div>
+    <p class="panel-note">
+      Stellt ein, in welchem Raster buchbare Uhrzeiten angeboten werden und wie
+      viel Pufferzeit nach jedem Termin automatisch freigehalten wird — z.B.
+      zum Aufräumen oder falls es mal länger dauert. Die Dauer jeder einzelnen
+      Leistung stellst du unter „Leistungen" ein.
+    </p>
+
+    <div class="field">
+      <label for="slotIntervalSelect">Zeitraster für buchbare Uhrzeiten</label>
+      <select id="slotIntervalSelect">
+        <option value="10">Alle 10 Minuten</option>
+        <option value="15">Alle 15 Minuten</option>
+        <option value="20">Alle 20 Minuten</option>
+        <option value="30">Alle 30 Minuten</option>
+        <option value="45">Alle 45 Minuten</option>
+        <option value="60">Jede volle Stunde</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="bufferSelect">Pufferzeit nach jedem Termin</label>
+      <select id="bufferSelect">
+        <option value="0">Keine Pufferzeit</option>
+        <option value="5">5 Minuten</option>
+        <option value="10">10 Minuten</option>
+        <option value="15">15 Minuten</option>
+        <option value="20">20 Minuten</option>
+        <option value="30">30 Minuten</option>
+      </select>
+    </div>
+
+    <button class="btn btn-primary" id="saveSettingsBtn">Speichern</button>
   </div>
 
 </div>

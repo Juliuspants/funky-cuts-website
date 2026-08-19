@@ -9,16 +9,18 @@
 </head>
 <body>
 
-<div class="bg-blobs">
-  <div class="blob blob-1"></div>
-  <div class="blob blob-2"></div>
-  <div class="blob blob-3"></div>
-</div>
+<div class="stripe-bar"></div>
 
 <div class="page">
   <div class="topbar">
     <div class="brand">
-      <span class="brand-mark">Funky Cuts</span>
+      <svg class="brand-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="12" cy="14" r="6" stroke="#241a12" stroke-width="3"/>
+        <circle cx="12" cy="34" r="6" stroke="#241a12" stroke-width="3"/>
+        <path d="M17 17L40 40M17 31L40 8" stroke="#241a12" stroke-width="3" stroke-linecap="round"/>
+        <path d="M22 24L26 24" stroke="#db5327" stroke-width="3" stroke-linecap="round"/>
+      </svg>
+      <span class="brand-mark display">Funky <span class="hl">Cuts</span></span>
     </div>
     <a class="admin-link" href="/admin">Admin</a>
   </div>
@@ -103,6 +105,7 @@
       <div class="field">
         <label for="emailInput">E-Mail (optional)</label>
         <input type="email" id="emailInput" placeholder="max@beispiel.de" autocomplete="email" />
+        <p class="field-note">Für die Terminbestätigung und falls sich mal was ändert.</p>
       </div>
       <div class="field">
         <label for="noteInput">Anmerkung (optional)</label>
@@ -120,13 +123,6 @@
       <div class="success-wrap">
         <div class="check-circle">
           <svg viewBox="0 0 100 100">
-            <defs>
-              <linearGradient id="successGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#ff5fa2" />
-                <stop offset="55%" stop-color="#7c5cff" />
-                <stop offset="100%" stop-color="#ffb347" />
-              </linearGradient>
-            </defs>
             <circle class="ring" cx="50" cy="50" r="42" />
             <path class="tick" d="M32 52l13 13 24-27" />
           </svg>

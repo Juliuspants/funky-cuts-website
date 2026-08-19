@@ -75,7 +75,21 @@ db.exec(`
 
   CREATE INDEX IF NOT EXISTS idx_bookings_date ON bookings(date);
   CREATE INDEX IF NOT EXISTS idx_blocked_date ON blocked_slots(date);
+
+  -- Globale Terminplanungs-Einstellungen (eine Zeile)
+  CREATE TABLE IF NOT EXISTS settings (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    slot_interval_minutes INTEGER NOT NULL DEFAULT 30,
+    buffer_minutes INTEGER NOT NULL DEFAULT 5
+  );
 `);
+
+const settingsCount = db.prepare("SELECT COUNT(*) AS c FROM settings").get().c;
+if (settingsCount === 0) {
+  db.prepare(
+    "INSERT INTO settings (id, slot_interval_minutes, buffer_minutes) VALUES (1, 30, 5)"
+  ).run();
+}
 
 // Standard-Öffnungszeiten anlegen, falls noch keine existieren (Mo-Fr 9-18, Sa 9-14, So zu)
 const whCount = db.prepare("SELECT COUNT(*) AS c FROM working_hours").get().c;

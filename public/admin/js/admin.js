@@ -74,6 +74,7 @@
     loadWorkingHours();
     loadBlockedSlots();
     loadServices();
+    loadSchedulingSettings();
   }
 
   $("#loginBtn").addEventListener("click", doLogin);
@@ -337,6 +338,37 @@
       loadServices();
     } catch (err) {
       showToast(err.message, true);
+    }
+  });
+
+  // ---------------- Scheduling settings ----------------
+
+  async function loadSchedulingSettings() {
+    try {
+      const s = await api("/api/admin/settings");
+      $("#slotIntervalSelect").value = String(s.slot_interval_minutes);
+      $("#bufferSelect").value = String(s.buffer_minutes);
+    } catch (err) {
+      showToast(err.message, true);
+    }
+  }
+
+  $("#saveSettingsBtn").addEventListener("click", async () => {
+    const btn = $("#saveSettingsBtn");
+    btn.disabled = true;
+    try {
+      await api("/api/admin/settings", {
+        method: "PUT",
+        body: JSON.stringify({
+          slotIntervalMinutes: Number($("#slotIntervalSelect").value),
+          bufferMinutes: Number($("#bufferSelect").value),
+        }),
+      });
+      showToast("Terminplanung gespeichert.");
+    } catch (err) {
+      showToast(err.message, true);
+    } finally {
+      btn.disabled = false;
     }
   });
 

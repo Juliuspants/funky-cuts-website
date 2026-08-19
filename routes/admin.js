@@ -2,6 +2,8 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 const db = require("../db");
 const { requireAdmin, issueToken, clearToken } = require("../middleware/auth");
+const mailer = require("../lib/mailer");
+const { timeToMinutes } = require("../lib/availability");
 
 const router = express.Router();
 
@@ -67,9 +69,47 @@ router.get("/bookings", (req, res) => {
   res.json(rows);
 });
 
-router.delete("/bookings/:id", (req, res) => {
-  const info = db.prepare("UPDATE bookings SET status = 'cancelled' WHERE id = ?").run(req.params.id);
-  if (info.changes === 0) return res.status(404).json({ error: "Termin nicht gefunden." });
+router.delete("/bookings/:id", async (req, res) => {
+  const booking = db
+    .prepare(
+      `SELECT b.*, s.name AS service_name FROM bookings b
+       JOIN services s ON s.id = b.service_id
+       WHERE b.id = ?`
+    )
+    .get(req.params.id);
+  if (!booking) return res.status(404).json({ error: "Termin nicht gefunden." });
+
+  db.prepare("UPDATE bookings SET status = 'cancelled' WHERE id = ?").run(req.params.id);
+  res.json({ ok: true });
+
+  // Kunde informieren, falls eine E-Mail hinterlegt ist. Läuft nach der Antwort,
+  // damit ein langsamer/fehlender Mailserver die Stornierung selbst nie blockiert.
+  mailer.sendCancellationEmail(booking).catch((err) => {
+    console.error("Storno-E-Mail konnte nicht gesendet werden:", err.message);
+  });
+});
+
+// --- Terminplanungs-Einstellungen (Zeitraster, Pufferzeit) ------------------
+
+router.get("/settings", (req, res) => {
+  const row = db.prepare("SELECT * FROM settings WHERE id = 1").get();
+  res.json(row);
+});
+
+router.put("/settings", (req, res) => {
+  const { slotIntervalMinutes, bufferMinutes } = req.body || {};
+  const interval = Number(slotIntervalMinutes);
+  const buffer = Number(bufferMinutes);
+  if (!Number.isInteger(interval) || interval < 5 || interval > 240) {
+    return res.status(400).json({ error: "Zeitraster muss zwischen 5 und 240 Minuten liegen." });
+  }
+  if (!Number.isInteger(buffer) || buffer < 0 || buffer > 120) {
+    return res.status(400).json({ error: "Pufferzeit muss zwischen 0 und 120 Minuten liegen." });
+  }
+  db.prepare("UPDATE settings SET slot_interval_minutes = ?, buffer_minutes = ? WHERE id = 1").run(
+    interval,
+    buffer
+  );
   res.json({ ok: true });
 });
 
@@ -80,9 +120,24 @@ router.get("/working-hours", (req, res) => {
   res.json(rows);
 });
 
+const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
+
 router.put("/working-hours", (req, res) => {
   const days = req.body?.days;
-  if (!Array.isArray(days)) return res.status(400).json({ error: "Ungültige Daten." });
+  if (!Array.isArray(days) || days.length === 0) {
+    return res.status(400).json({ error: "Ungültige Daten." });
+  }
+  for (const d of days) {
+    if (!Number.isInteger(d.weekday) || d.weekday < 0 || d.weekday > 6) {
+      return res.status(400).json({ error: "Ungültiger Wochentag." });
+    }
+    if (!TIME_RE.test(d.start_time) || !TIME_RE.test(d.end_time)) {
+      return res.status(400).json({ error: "Uhrzeiten müssen im Format HH:MM vorliegen." });
+    }
+    if (timeToMinutes(d.start_time) >= timeToMinutes(d.end_time)) {
+      return res.status(400).json({ error: "Die Startzeit muss vor der Endzeit liegen." });
+    }
+  }
 
   const stmt = db.prepare(
     "UPDATE working_hours SET closed = ?, start_time = ?, end_time = ? WHERE weekday = ?"

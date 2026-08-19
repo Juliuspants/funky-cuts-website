@@ -333,7 +333,7 @@
   // ---------------- confetti ----------------
 
   function fireConfetti() {
-    const colors = ["#ff5fa2", "#7c5cff", "#ffb347", "#35e7c8"];
+    const colors = ["#db5327", "#e7ab2e", "#5c7a4e", "#241a12"];
     const count = 60;
     for (let i = 0; i < count; i++) {
       const piece = document.createElement("div");
