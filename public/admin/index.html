@@ -45,6 +45,7 @@
     <button class="tab-btn" data-tab="blocked">Pausen &amp; Urlaub</button>
     <button class="tab-btn" data-tab="services">Leistungen</button>
     <button class="tab-btn" data-tab="settings">Terminplanung</button>
+    <button class="tab-btn" data-tab="content">Startseite</button>
   </div>
 
   <!-- Bookings -->
@@ -132,6 +133,53 @@
     </div>
 
     <button class="btn btn-primary" id="saveSettingsBtn">Speichern</button>
+  </div>
+
+  <!-- Homepage content -->
+  <div class="tab-panel" data-panel="content">
+    <div class="panel-head">
+      <h2>Startseite bearbeiten</h2>
+    </div>
+    <p class="panel-note">
+      Diese Texte und Bilder erscheinen direkt auf der öffentlichen Startseite
+      (funkycuts.de). Änderungen sind sofort nach dem Speichern live.
+    </p>
+
+    <div class="field">
+      <label for="heroTitleInput">Überschrift (Hero)</label>
+      <textarea id="heroTitleInput" rows="2" placeholder="Frischer Schnitt,&#10;gute Laune."></textarea>
+      <p class="field-note">Ein Zeilenumbruch erzeugt einen Umbruch in der Anzeige.</p>
+    </div>
+    <div class="field">
+      <label for="heroTextInput">Kurztext unter der Überschrift</label>
+      <textarea id="heroTextInput" rows="3"></textarea>
+    </div>
+    <div class="field">
+      <label for="aboutTextInput">Über uns</label>
+      <textarea id="aboutTextInput" rows="5"></textarea>
+    </div>
+    <div class="field">
+      <label for="addressLine1Input">Adresse — Straße &amp; Nr.</label>
+      <input type="text" id="addressLine1Input" placeholder="Musterstraße 1" />
+    </div>
+    <div class="field">
+      <label for="addressLine2Input">Adresse — PLZ &amp; Ort</label>
+      <input type="text" id="addressLine2Input" placeholder="12345 Musterstadt" />
+    </div>
+    <div class="save-bar">
+      <button class="btn btn-primary" id="saveContentBtn">Texte speichern</button>
+    </div>
+
+    <div class="panel-head" style="margin-top:36px;">
+      <h2>Galerie (Vorher &amp; Nachher)</h2>
+    </div>
+    <p class="panel-note">
+      Bilder werden automatisch verkleinert. Empfohlen: Quadratische Fotos, gute Beleuchtung.
+      Mit den Pfeilen lässt sich die Reihenfolge auf der Startseite ändern.
+    </p>
+    <input type="file" id="galleryFileInput" accept="image/*" style="display:none;" />
+    <button class="btn btn-primary" id="galleryUploadBtn" style="margin-bottom:18px;">Bild hochladen</button>
+    <div id="galleryManageGrid" class="gallery-manage-grid"></div>
   </div>
 
 </div>

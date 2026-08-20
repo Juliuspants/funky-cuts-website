@@ -45,6 +45,10 @@
     const [y, m, d] = dateStr.split("-").map(Number);
     return new Date(y, m - 1, d).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" });
   }
+  function formatWeekdayShort(dateStr) {
+    const [y, m, d] = dateStr.split("-").map(Number);
+    return new Date(y, m - 1, d).toLocaleDateString("de-DE", { weekday: "short" });
+  }
   function formatDateHuman(dateStr) {
     const [y, m, d] = dateStr.split("-").map(Number);
     return new Date(y, m - 1, d).toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" });
@@ -75,6 +79,8 @@
     loadBlockedSlots();
     loadServices();
     loadSchedulingSettings();
+    loadContent();
+    loadGallery();
   }
 
   $("#loginBtn").addEventListener("click", doLogin);
@@ -130,7 +136,7 @@
       list.innerHTML = rows.map((b, i) => `
         <div class="booking-row" style="animation-delay:${i * 40}ms">
           <div class="booking-when">
-            <div class="d">${formatDateShort(b.date)}</div>
+            <div class="d">${formatWeekdayShort(b.date)} ${formatDateShort(b.date)}</div>
             <div class="t">${b.start_time}</div>
           </div>
           <div class="booking-info">
@@ -385,6 +391,156 @@
       showToast(err.message, true);
     } finally {
       btn.disabled = false;
+    }
+  });
+
+  // ---------------- Startseite: Texte ----------------
+
+  async function loadContent() {
+    try {
+      const c = await api("/api/admin/content");
+      $("#heroTitleInput").value = c.heroTitle || "";
+      $("#heroTextInput").value = c.heroText || "";
+      $("#aboutTextInput").value = c.aboutText || "";
+      $("#addressLine1Input").value = c.addressLine1 || "";
+      $("#addressLine2Input").value = c.addressLine2 || "";
+    } catch (err) {
+      showToast(err.message, true);
+    }
+  }
+
+  $("#saveContentBtn").addEventListener("click", async () => {
+    const btn = $("#saveContentBtn");
+    btn.disabled = true;
+    try {
+      await api("/api/admin/content", {
+        method: "PUT",
+        body: JSON.stringify({
+          heroTitle: $("#heroTitleInput").value,
+          heroText: $("#heroTextInput").value,
+          aboutText: $("#aboutTextInput").value,
+          addressLine1: $("#addressLine1Input").value,
+          addressLine2: $("#addressLine2Input").value,
+        }),
+      });
+      showToast("Startseite gespeichert.");
+    } catch (err) {
+      showToast(err.message, true);
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  // ---------------- Startseite: Galerie ----------------
+
+  async function loadGallery() {
+    const grid = $("#galleryManageGrid");
+    try {
+      const images = await api("/api/admin/gallery");
+      if (images.length === 0) {
+        grid.innerHTML = `<div class="gallery-manage-empty">Noch keine Bilder hochgeladen.</div>`;
+        return;
+      }
+      grid.innerHTML = images.map((img) => `
+        <div class="gallery-manage-item" data-id="${img.id}">
+          <img src="${img.url}" alt="Galeriebild" />
+          <div class="gallery-manage-actions">
+            <button class="gallery-manage-move" data-dir="left" title="Nach links verschieben">◀</button>
+            <button class="gallery-manage-delete" title="Löschen">✕</button>
+            <button class="gallery-manage-move" data-dir="right" title="Nach rechts verschieben">▶</button>
+          </div>
+        </div>
+      `).join("");
+      grid.querySelectorAll(".gallery-manage-move").forEach((btn) => {
+        btn.addEventListener("click", () => moveGalleryImage(btn.closest(".gallery-manage-item").dataset.id, btn.dataset.dir));
+      });
+      grid.querySelectorAll(".gallery-manage-delete").forEach((btn) => {
+        btn.addEventListener("click", () => deleteGalleryImage(btn.closest(".gallery-manage-item").dataset.id));
+      });
+    } catch (err) {
+      grid.innerHTML = `<div class="gallery-manage-empty">Galerie konnte nicht geladen werden.</div>`;
+      showToast(err.message, true);
+    }
+  }
+
+  async function moveGalleryImage(id, dir) {
+    try {
+      await api(`/api/admin/gallery/${id}/move`, {
+        method: "PUT",
+        body: JSON.stringify({ direction: dir }),
+      });
+      loadGallery();
+    } catch (err) {
+      showToast(err.message, true);
+    }
+  }
+
+  async function deleteGalleryImage(id) {
+    if (!confirm("Dieses Bild wirklich löschen?")) return;
+    try {
+      await api(`/api/admin/gallery/${id}`, { method: "DELETE" });
+      showToast("Bild gelöscht.");
+      loadGallery();
+    } catch (err) {
+      showToast(err.message, true);
+    }
+  }
+
+  // Bild vor dem Upload clientseitig verkleinern/komprimieren, damit es
+  // sicher unter das Netlify-Function-Body-Limit passt und die Startseite
+  // schnell lädt.
+  function resizeImageFile(file, maxDimension = 1400, quality = 0.82) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error("Datei konnte nicht gelesen werden."));
+      reader.onload = () => {
+        const img = new Image();
+        img.onerror = () => reject(new Error("Bild konnte nicht geladen werden."));
+        img.onload = () => {
+          let { width, height } = img;
+          if (width > maxDimension || height > maxDimension) {
+            if (width >= height) {
+              height = Math.round((height / width) * maxDimension);
+              width = maxDimension;
+            } else {
+              width = Math.round((width / height) * maxDimension);
+              height = maxDimension;
+            }
+          }
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL("image/jpeg", quality));
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  $("#galleryUploadBtn").addEventListener("click", () => $("#galleryFileInput").click());
+
+  $("#galleryFileInput").addEventListener("change", async () => {
+    const file = $("#galleryFileInput").files[0];
+    $("#galleryFileInput").value = "";
+    if (!file) return;
+    const btn = $("#galleryUploadBtn");
+    btn.disabled = true;
+    btn.textContent = "Wird hochgeladen …";
+    try {
+      const dataUrl = await resizeImageFile(file);
+      await api("/api/admin/gallery", {
+        method: "POST",
+        body: JSON.stringify({ image: dataUrl }),
+      });
+      showToast("Bild hochgeladen.");
+      loadGallery();
+    } catch (err) {
+      showToast(err.message, true);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Bild hochladen";
     }
   });
 

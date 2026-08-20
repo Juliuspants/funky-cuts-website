@@ -10,7 +10,9 @@ const publicRoutes = require("../../routes/public");
 const adminRoutes = require("../../routes/admin");
 
 const app = express();
-app.use(express.json());
+// Netlify-Functions haben ein Limit von 6 MB pro Request-Body — Bilder werden
+// clientseitig vor dem Upload verkleinert, dieses Limit ist nur ein Sicherheitsnetz.
+app.use(express.json({ limit: "6mb" }));
 app.use(cookieParser());
 
 app.get("/api/config", (req, res) => {

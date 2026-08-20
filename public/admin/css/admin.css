@@ -98,7 +98,7 @@
 .booking-row:hover { border-color: rgba(231,228,221,0.16); }
 
 .booking-when {
-  min-width: 84px;
+  min-width: 92px;
   text-align: center;
   padding: 7px 4px;
   border-radius: var(--radius-sm);
@@ -221,3 +221,64 @@
 .add-block-form { display: grid; grid-template-columns: 1fr auto; gap: 10px; margin-bottom: 20px; align-items: end; }
 
 .save-bar { position: sticky; bottom: 16px; display: flex; justify-content: flex-end; margin-top: 18px; }
+
+/* ---- homepage content / gallery manager ---- */
+
+.gallery-manage-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+}
+.gallery-manage-item {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  overflow: hidden;
+  background: var(--card);
+}
+.gallery-manage-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.gallery-manage-actions {
+  position: absolute;
+  inset: auto 0 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px;
+  background: linear-gradient(0deg, rgba(0,0,0,0.65), transparent);
+  opacity: 0;
+  transition: opacity 0.18s var(--ease-out);
+}
+.gallery-manage-item:hover .gallery-manage-actions,
+.gallery-manage-item:focus-within .gallery-manage-actions { opacity: 1; }
+.gallery-manage-move {
+  background: rgba(23, 25, 28, 0.85);
+  border: 1px solid rgba(231, 228, 221, 0.25);
+  color: #fff;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  line-height: 1;
+}
+.gallery-manage-move:hover { border-color: var(--clay); }
+.gallery-manage-delete {
+  background: rgba(185, 106, 90, 0.85);
+  border: none;
+  color: #fff;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+}
+.gallery-manage-empty {
+  color: var(--ink-faint);
+  font-size: 13px;
+  padding: 20px 0;
+}

@@ -25,6 +25,31 @@ router.get(
 );
 
 router.get(
+  "/content",
+  asyncHandler(async (req, res) => {
+    const { rows } = await pool.query("SELECT key, value FROM site_content");
+    const byKey = Object.fromEntries(rows.map((r) => [r.key, r.value]));
+    res.json({
+      heroTitle: byKey.hero_title || "",
+      heroText: byKey.hero_text || "",
+      aboutText: byKey.about_text || "",
+      addressLine1: byKey.address_line1 || "",
+      addressLine2: byKey.address_line2 || "",
+    });
+  })
+);
+
+router.get(
+  "/gallery",
+  asyncHandler(async (req, res) => {
+    const { rows } = await pool.query(
+      "SELECT id, mime_type, data_base64 FROM gallery_images ORDER BY sort_order, id"
+    );
+    res.json(rows.map((r) => ({ id: r.id, url: `data:${r.mime_type};base64,${r.data_base64}` })));
+  })
+);
+
+router.get(
   "/availability",
   asyncHandler(async (req, res) => {
     const { date, serviceId } = req.query;

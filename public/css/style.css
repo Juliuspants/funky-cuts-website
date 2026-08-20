@@ -566,13 +566,27 @@ a { color: inherit; }
   max-width: 62ch;
 }
 
-.gallery-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
+.gallery-scroll-wrap {
+  position: relative;
   margin-top: 20px;
 }
+.gallery-scroll {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  padding: 4px 4px 14px;
+  margin: -4px -4px -14px;
+  /* Scrollbar dezent ausblenden — die Pfeile übernehmen die Bedienung */
+  scrollbar-width: none;
+}
+.gallery-scroll::-webkit-scrollbar { display: none; }
 .gallery-item {
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+  width: 220px;
   aspect-ratio: 1;
   border-radius: var(--radius-sm);
   border: 1px dashed rgba(231, 228, 221, 0.18);
@@ -582,6 +596,7 @@ a { color: inherit; }
   justify-content: center;
   text-align: center;
   padding: 10px;
+  position: relative;
 }
 .gallery-item::before {
   content: "📷";
@@ -593,6 +608,45 @@ a { color: inherit; }
   font-size: 11.5px;
   color: var(--ink-faint);
   margin-top: 30px;
+}
+.gallery-item-photo {
+  border: 1px solid var(--line);
+  padding: 0;
+  overflow: hidden;
+}
+.gallery-item-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.45s var(--ease-out);
+}
+.gallery-item-photo:hover img { transform: scale(1.05); }
+
+.gallery-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--ink-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: var(--shadow-md);
+  transition: color 0.18s var(--ease-out), border-color 0.18s var(--ease-out), transform 0.18s var(--ease-out);
+  z-index: 2;
+}
+.gallery-nav:hover { color: var(--ink); border-color: var(--clay); transform: translateY(-50%) scale(1.06); }
+.gallery-nav:active { transform: translateY(-50%) scale(0.96); }
+.gallery-nav-left { left: -8px; }
+.gallery-nav-right { right: -8px; }
+@media (max-width: 640px) {
+  .gallery-nav { display: none; }
 }
 
 .info-grid {
@@ -629,5 +683,5 @@ a { color: inherit; }
 .info-value a:hover { color: var(--ink); }
 
 @media (max-width: 480px) {
-  .gallery-grid { grid-template-columns: repeat(2, 1fr); }
+  .gallery-item { width: 168px; }
 }

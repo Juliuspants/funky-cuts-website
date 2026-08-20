@@ -87,6 +87,22 @@ async function runMigrations() {
       slot_interval_minutes INTEGER NOT NULL DEFAULT 30,
       buffer_minutes INTEGER NOT NULL DEFAULT 5
     );
+
+    -- Bearbeitbare Texte der Startseite (Key-Value)
+    CREATE TABLE IF NOT EXISTS site_content (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL DEFAULT ''
+    );
+
+    -- Galerie-Bilder für die Startseite (als Base64 in der DB abgelegt,
+    -- da Netlify Functions kein persistentes Dateisystem haben)
+    CREATE TABLE IF NOT EXISTS gallery_images (
+      id SERIAL PRIMARY KEY,
+      mime_type TEXT NOT NULL,
+      data_base64 TEXT NOT NULL,
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
   `);
 
   // Standard-Öffnungszeiten anlegen, falls noch keine existieren (Mo-Fr 9-18, Sa 9-14, So zu)
@@ -132,6 +148,27 @@ async function runMigrations() {
     await pool.query(
       "INSERT INTO settings (id, slot_interval_minutes, buffer_minutes) VALUES (1, 30, 5)"
     );
+  }
+
+  // Standard-Platzhaltertexte für die Startseite anlegen, falls noch keine existieren
+  const { rows: contentRows } = await pool.query("SELECT COUNT(*)::int AS c FROM site_content");
+  if (contentRows[0].c === 0) {
+    const defaults = [
+      ["hero_title", "Frischer Schnitt,\ngute Laune."],
+      [
+        "hero_text",
+        "Funky Cuts ist dein Barbershop für Haarschnitt, Bart und alles dazwischen. Entspannte Atmosphäre, ehrliche Beratung, sauberes Handwerk.",
+      ],
+      [
+        "about_text",
+        "[Platzhalter: kurzer Text über Funky Cuts — wer steckt dahinter, seit wann gibt's den Laden, was macht euch besonders?]",
+      ],
+      ["address_line1", "[Platzhalter-Straße 1]"],
+      ["address_line2", "[PLZ] [Ort]"],
+    ];
+    for (const [key, value] of defaults) {
+      await pool.query("INSERT INTO site_content (key, value) VALUES ($1, $2)", [key, value]);
+    }
   }
 }
 

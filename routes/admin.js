@@ -270,4 +270,110 @@ router.delete(
   })
 );
 
+// --- Startseiten-Inhalte (Texte) --------------------------------------------
+
+const CONTENT_KEYS = {
+  heroTitle: "hero_title",
+  heroText: "hero_text",
+  aboutText: "about_text",
+  addressLine1: "address_line1",
+  addressLine2: "address_line2",
+};
+
+router.get(
+  "/content",
+  asyncHandler(async (req, res) => {
+    const { rows } = await pool.query("SELECT key, value FROM site_content");
+    const byKey = Object.fromEntries(rows.map((r) => [r.key, r.value]));
+    const out = {};
+    for (const [camel, dbKey] of Object.entries(CONTENT_KEYS)) out[camel] = byKey[dbKey] || "";
+    res.json(out);
+  })
+);
+
+router.put(
+  "/content",
+  asyncHandler(async (req, res) => {
+    const body = req.body || {};
+    for (const [camel, dbKey] of Object.entries(CONTENT_KEYS)) {
+      if (body[camel] === undefined) continue;
+      await pool.query(
+        `INSERT INTO site_content (key, value) VALUES ($1, $2)
+         ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
+        [dbKey, String(body[camel])]
+      );
+    }
+    res.json({ ok: true });
+  })
+);
+
+// --- Galerie -----------------------------------------------------------------
+
+const ALLOWED_IMAGE_MIME = new Set(["image/jpeg", "image/png", "image/webp"]);
+const DATA_URL_RE = /^data:([a-zA-Z0-9.+-]+\/[a-zA-Z0-9.+-]+);base64,(.+)$/;
+
+router.get(
+  "/gallery",
+  asyncHandler(async (req, res) => {
+    const { rows } = await pool.query(
+      "SELECT id, mime_type, data_base64, sort_order FROM gallery_images ORDER BY sort_order, id"
+    );
+    res.json(rows.map((r) => ({ id: r.id, url: `data:${r.mime_type};base64,${r.data_base64}` })));
+  })
+);
+
+router.post(
+  "/gallery",
+  asyncHandler(async (req, res) => {
+    const { image } = req.body || {};
+    if (!image || typeof image !== "string") {
+      return res.status(400).json({ error: "Kein Bild übermittelt." });
+    }
+    const match = image.match(DATA_URL_RE);
+    if (!match) return res.status(400).json({ error: "Ungültiges Bildformat." });
+    const [, mimeType, base64] = match;
+    if (!ALLOWED_IMAGE_MIME.has(mimeType)) {
+      return res.status(400).json({ error: "Nur JPEG, PNG oder WebP erlaubt." });
+    }
+    if (base64.length > 4_500_000) {
+      return res.status(413).json({ error: "Bild ist zu groß. Bitte ein kleineres Bild wählen." });
+    }
+    const { rows: maxRows } = await pool.query("SELECT COALESCE(MAX(sort_order), -1) AS m FROM gallery_images");
+    const { rows } = await pool.query(
+      "INSERT INTO gallery_images (mime_type, data_base64, sort_order) VALUES ($1, $2, $3) RETURNING id",
+      [mimeType, base64, maxRows[0].m + 1]
+    );
+    res.status(201).json({ id: rows[0].id });
+  })
+);
+
+router.put(
+  "/gallery/:id/move",
+  asyncHandler(async (req, res) => {
+    const { direction } = req.body || {};
+    if (direction !== "left" && direction !== "right") {
+      return res.status(400).json({ error: "Ungültige Richtung." });
+    }
+    const { rows } = await pool.query("SELECT id, sort_order FROM gallery_images ORDER BY sort_order, id");
+    const idx = rows.findIndex((r) => String(r.id) === String(req.params.id));
+    if (idx === -1) return res.status(404).json({ error: "Bild nicht gefunden." });
+    const swapIdx = direction === "left" ? idx - 1 : idx + 1;
+    if (swapIdx < 0 || swapIdx >= rows.length) return res.json({ ok: true });
+    const a = rows[idx];
+    const b = rows[swapIdx];
+    await pool.query("UPDATE gallery_images SET sort_order = $1 WHERE id = $2", [b.sort_order, a.id]);
+    await pool.query("UPDATE gallery_images SET sort_order = $1 WHERE id = $2", [a.sort_order, b.id]);
+    res.json({ ok: true });
+  })
+);
+
+router.delete(
+  "/gallery/:id",
+  asyncHandler(async (req, res) => {
+    const result = await pool.query("DELETE FROM gallery_images WHERE id = $1", [req.params.id]);
+    if (result.rowCount === 0) return res.status(404).json({ error: "Bild nicht gefunden." });
+    res.json({ ok: true });
+  })
+);
+
 module.exports = router;
