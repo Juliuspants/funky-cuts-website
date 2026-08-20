@@ -117,13 +117,26 @@ router.post(
       endTime,
     };
 
+    // Adresse für den Kalender-Eintrag (LOCATION) in der Bestätigungsmail —
+    // wird nur für den Mailversand gebraucht, nicht in der API-Antwort.
+    let location = "";
+    try {
+      const { rows: addrRows } = await pool.query(
+        "SELECT key, value FROM site_content WHERE key IN ('address_line1', 'address_line2')"
+      );
+      const byKey = Object.fromEntries(addrRows.map((r) => [r.key, r.value]));
+      location = [byKey.address_line1, byKey.address_line2].filter(Boolean).join(", ");
+    } catch (_) {
+      // Adresse ist rein kosmetisch für den Kalendereintrag — bei Problemen einfach weglassen.
+    }
+
     // Wird vor der Antwort abgewartet (nicht "fire and forget") — in einer
     // Serverless-Function kann die Ausführungsumgebung direkt nach der
     // Antwort eingefroren werden, ein danach laufender Mail-Versand hätte
     // dann keine Garantie mehr, überhaupt fertig zu laufen. Ein Mail-Fehler
     // lässt die Buchung selbst trotzdem nie fehlschlagen.
     await Promise.all([
-      mailer.sendBookingConfirmation(booking).catch((err) => console.error("Bestätigungs-E-Mail fehlgeschlagen:", err.message)),
+      mailer.sendBookingConfirmation({ ...booking, location }).catch((err) => console.error("Bestätigungs-E-Mail fehlgeschlagen:", err.message)),
       mailer.sendAdminNewBookingNotice(booking).catch((err) => console.error("Admin-Benachrichtigung fehlgeschlagen:", err.message)),
     ]);
 

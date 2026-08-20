@@ -39,13 +39,13 @@
     </section>
 
     <!-- About -->
-    <section class="section">
+    <section class="section reveal">
       <h2 class="section-title display">Über uns</h2>
       <p class="section-text" id="aboutText">Wird geladen …</p>
     </section>
 
     <!-- Gallery -->
-    <section class="section">
+    <section class="section reveal">
       <h2 class="section-title display">Vorher &amp; Nachher</h2>
       <p class="section-text">Ein paar Eindrücke aus dem Shop.</p>
       <div class="gallery-scroll-wrap">
@@ -64,10 +64,11 @@
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
       </div>
+      <div class="gallery-dots" id="galleryDots"></div>
     </section>
 
     <!-- Info / Contact -->
-    <section class="section">
+    <section class="section reveal">
       <h2 class="section-title display">Besuch uns</h2>
       <div class="info-grid">
         <div class="info-card">
@@ -163,17 +164,115 @@
     // Platzhalter bleiben sichtbar
   }
 
+  // Scroll-Reveal: Abschnitte blenden sanft ein, sobald sie ins Blickfeld kommen
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const revealEls = document.querySelectorAll(".reveal");
+  if (reduceMotion || !("IntersectionObserver" in window)) {
+    revealEls.forEach((el) => el.classList.add("in-view"));
+  } else {
+    const revealObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("in-view");
+            revealObserver.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.15, rootMargin: "0px 0px -40px 0px" }
+    );
+    revealEls.forEach((el) => revealObserver.observe(el));
+  }
+
+  // Galerie: Karussell mit Pfeilen, Punkten und automatischem "Slideshow"-Vorlauf
   const scroll = document.getElementById("galleryScroll");
+  const wrap = document.querySelector(".gallery-scroll-wrap");
   const prevBtn = document.getElementById("galleryPrev");
   const nextBtn = document.getElementById("galleryNext");
-  if (scroll && prevBtn && nextBtn) {
-    const scrollByCard = (dir) => {
+  const dotsEl = document.getElementById("galleryDots");
+  if (scroll && wrap && prevBtn && nextBtn && dotsEl) {
+    const items = () => Array.from(scroll.querySelectorAll(".gallery-item"));
+
+    const cardStep = () => {
       const card = scroll.querySelector(".gallery-item");
-      const amount = card ? card.getBoundingClientRect().width + 16 : 260;
-      scroll.scrollBy({ left: dir * amount, behavior: "smooth" });
+      return card ? card.getBoundingClientRect().width + 16 : 260;
     };
+
+    const scrollByCard = (dir) => scroll.scrollBy({ left: dir * cardStep(), behavior: "smooth" });
+
+    const scrollToIndex = (idx) => {
+      const el = items()[idx];
+      if (el) scroll.scrollTo({ left: el.offsetLeft - scroll.offsetLeft, behavior: "smooth" });
+    };
+
+    function buildDots() {
+      const els = items();
+      dotsEl.innerHTML = els
+        .map((_, i) => `<button class="gallery-dot" data-index="${i}" aria-label="Bild ${i + 1}"></button>`)
+        .join("");
+      dotsEl.querySelectorAll(".gallery-dot").forEach((dot) => {
+        dot.addEventListener("click", () => scrollToIndex(Number(dot.dataset.index)));
+      });
+      if (els[0]) dotsEl.querySelector(".gallery-dot")?.classList.add("active");
+    }
+    buildDots();
+
+    // Verfolgt, welches Bild gerade am weitesten sichtbar ist, und markiert den passenden Punkt
+    let activeIndex = 0;
+    if ("IntersectionObserver" in window) {
+      const indexObserver = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting && entry.intersectionRatio > 0.6) {
+              const idx = items().indexOf(entry.target);
+              if (idx !== -1 && idx !== activeIndex) {
+                activeIndex = idx;
+                dotsEl.querySelectorAll(".gallery-dot").forEach((d, i) => d.classList.toggle("active", i === idx));
+              }
+            }
+          });
+        },
+        { root: scroll, threshold: [0, 0.6, 1] }
+      );
+      items().forEach((el) => indexObserver.observe(el));
+    }
+
     prevBtn.addEventListener("click", () => scrollByCard(-1));
     nextBtn.addEventListener("click", () => scrollByCard(1));
+
+    // Automatischer Slideshow-Vorlauf — pausiert bei jeder Nutzerinteraktion
+    // und läuft danach von selbst wieder an.
+    let autoTimer = null;
+    function stopAutoplay() {
+      clearInterval(autoTimer);
+      autoTimer = null;
+    }
+    function startAutoplay() {
+      if (reduceMotion || autoTimer || items().length < 2) return;
+      autoTimer = setInterval(() => {
+        const atEnd = scroll.scrollLeft + scroll.clientWidth >= scroll.scrollWidth - 4;
+        if (atEnd) scroll.scrollTo({ left: 0, behavior: "smooth" });
+        else scrollByCard(1);
+      }, 3800);
+    }
+    function pauseThenResume(delay = 4000) {
+      stopAutoplay();
+      clearTimeout(pauseThenResume._t);
+      pauseThenResume._t = setTimeout(startAutoplay, delay);
+    }
+
+    ["pointerdown", "touchstart"].forEach((ev) => scroll.addEventListener(ev, () => stopAutoplay(), { passive: true }));
+    ["pointerup", "touchend"].forEach((ev) => scroll.addEventListener(ev, () => pauseThenResume(), { passive: true }));
+    wrap.addEventListener("mouseenter", stopAutoplay);
+    wrap.addEventListener("mouseleave", () => pauseThenResume(1200));
+    prevBtn.addEventListener("click", () => pauseThenResume());
+    nextBtn.addEventListener("click", () => pauseThenResume());
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) stopAutoplay();
+      else startAutoplay();
+    });
+
+    startAutoplay();
   }
 })();
 </script>

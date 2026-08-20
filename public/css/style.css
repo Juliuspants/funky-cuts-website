@@ -541,6 +541,7 @@ a { color: inherit; }
   line-height: 1.12;
   margin-bottom: 18px;
   color: var(--ink);
+  animation: hero-in 0.75s var(--ease-out) backwards;
 }
 .hero-text {
   color: var(--ink-soft);
@@ -548,6 +549,27 @@ a { color: inherit; }
   line-height: 1.6;
   max-width: 46ch;
   margin: 0 auto 28px;
+  animation: hero-in 0.75s var(--ease-out) 0.12s backwards;
+}
+.hero .btn-lg { animation: hero-in 0.75s var(--ease-out) 0.24s backwards; }
+
+@keyframes hero-in {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Scroll-Reveal: Abschnitte blenden sanft ein, sobald sie ins Blickfeld
+   scrollen (siehe IntersectionObserver in index.html) */
+.reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.7s var(--ease-out), transform 0.7s var(--ease-out);
+}
+.reveal.in-view { opacity: 1; transform: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-title, .hero-text, .hero .btn-lg { animation: none; }
+  .reveal { opacity: 1; transform: none; transition: none; }
 }
 
 .section {
@@ -648,6 +670,25 @@ a { color: inherit; }
 @media (max-width: 640px) {
   .gallery-nav { display: none; }
 }
+
+.gallery-dots {
+  display: flex;
+  justify-content: center;
+  gap: 7px;
+  margin-top: 16px;
+}
+.gallery-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--line);
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: background 0.25s var(--ease-out), transform 0.25s var(--ease-pop), width 0.25s var(--ease-out);
+}
+.gallery-dot:hover { background: var(--clay-soft); }
+.gallery-dot.active { background: var(--clay); width: 20px; border-radius: 4px; }
 
 .info-grid {
   display: grid;
