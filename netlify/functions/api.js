@@ -13,17 +13,18 @@ const app = express();
 app.use(express.json());
 app.use(cookieParser());
 
-app.get("/config", (req, res) => {
+app.get("/api/config", (req, res) => {
   res.json({
     salonName: process.env.SALON_NAME || "Friseursalon",
     contactEmail: process.env.CONTACT_EMAIL || null,
   });
 });
 
-// Kein "/api"-Präfix hier — das übernimmt der Netlify-Redirect (siehe netlify.toml),
-// der /api/* auf diese Function umleitet und dabei den Präfix abschneidet.
-app.use("/", publicRoutes);
-app.use("/admin", adminRoutes);
+// Netlify reicht bei umgeleiteten Function-Aufrufen den ursprünglichen Pfad
+// durch (z.B. "/api/config" bleibt "/api/config", der Redirect schneidet
+// nichts ab) — deshalb hier mit "/api"-Präfix mounten, genau wie in server.js.
+app.use("/api", publicRoutes);
+app.use("/api/admin", adminRoutes);
 
 app.use((err, req, res, next) => {
   console.error("Unerwarteter Fehler:", err);
