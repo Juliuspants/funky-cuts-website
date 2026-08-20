@@ -8,12 +8,15 @@ und Leistungen über einen eigenen Admin-Bereich.
 - **Admin:** `/admin` — Login, Termine einsehen/stornieren, Öffnungszeiten
   einstellen, Tage blockieren (Urlaub, Pause), Leistungen verwalten.
 
-Kein Build-Schritt nötig, ein Node-Prozess bedient Frontend + API, Daten
-liegen in einer lokalen SQLite-Datei.
+Läuft als Node/Express-App, Daten liegen in einer **Supabase-Postgres-Datenbank**
+(kostenloser Cloud-Speicher, kein lokaler Dateispeicher nötig). Gehostet wird
+über **Netlify** (kostenlos): statische Dateien direkt über Netlifys CDN,
+API über eine einzelne Netlify Function.
 
 ## 1. Lokal einrichten
 
-Voraussetzung: [Node.js](https://nodejs.org/) Version 18 oder neuer.
+Voraussetzung: [Node.js](https://nodejs.org/) Version 18 oder neuer, sowie ein
+kostenloses [Supabase](https://supabase.com)-Projekt (siehe unten).
 
 ```bash
 npm install
@@ -25,7 +28,8 @@ npm install
 cp .env.example .env
 ```
 
-In der `.env` den `JWT_SECRET` durch einen eigenen Zufallswert ersetzen, z.B. erzeugen mit:
+Darin `DATABASE_URL` (Supabase-Verbindungsstring, siehe Abschnitt 4) und
+`JWT_SECRET` (eigener Zufallswert) eintragen:
 
 ```bash
 node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
@@ -40,7 +44,8 @@ npm run set-admin-password -- funky geheimespasswort123
 ```
 
 (Benutzername und Passwort frei wählbar, Passwort mind. 6 Zeichen. Das
-Kommando kann jederzeit erneut ausgeführt werden, um das Passwort zu ändern.)
+Kommando kann jederzeit erneut ausgeführt werden, um das Passwort zu ändern —
+läuft direkt gegen die Supabase-Datenbank, egal ob lokal oder live.)
 
 ## 3. Starten
 
@@ -56,6 +61,36 @@ Für die Entwicklung mit Auto-Reload bei Codeänderungen:
 ```bash
 npm run dev
 ```
+
+## 4. Supabase-Projekt einrichten (einmalig)
+
+1. Kostenloses Konto auf [supabase.com](https://supabase.com) anlegen, neues
+   Projekt erstellen (Region z.B. Frankfurt).
+2. Im Dashboard: **Project Settings → Database → Connection string** →
+   Reiter **„Connection pooling"**, Modus **„Transaction"** — diese URL in
+   `DATABASE_URL` eintragen (Passwort war beim Projekt-Anlegen sichtbar,
+   sonst dort zurücksetzen).
+3. Tabellen werden beim ersten Start automatisch angelegt (`npm start` oder
+   erster Aufruf der Netlify Function) — kein manuelles SQL nötig.
+
+## 5. Deployment auf Netlify
+
+1. Projekt in ein (privates) GitHub-Repository pushen (bereits erledigt).
+2. Auf [netlify.com](https://netlify.com) kostenlos anmelden → **„Add new
+   site" → „Import an existing project"** → GitHub-Repo auswählen.
+3. Build-Einstellungen übernimmt Netlify automatisch aus `netlify.toml`
+   (Build-Befehl `npm install`, Publish-Ordner `public`, Functions-Ordner
+   `netlify/functions`) — nichts weiter einzustellen.
+4. Unter **Site settings → Environment variables** alle Werte aus der
+   lokalen `.env` eintragen (`DATABASE_URL`, `JWT_SECRET`, `SALON_NAME`,
+   `CONTACT_EMAIL`, `TZ`, `SMTP_*`, `ADMIN_NOTIFY_EMAIL`).
+5. Deploy anstoßen — danach ist die Seite unter einer `*.netlify.app`-URL
+   live.
+6. Eigene Domain verbinden: **Site settings → Domain management → Add a
+   domain**. Netlify zeigt dann entweder DNS-Einträge (A/CNAME) zum Setzen
+   beim Domain-Anbieter, oder bietet eine Weiterleitung an — beim jeweiligen
+   Registrar (z.B. Hostinger) unter „Domain verwalten" eintragen. SSL
+   (https) richtet Netlify danach automatisch und kostenlos ein.
 
 ## Standard-Daten beim ersten Start
 
@@ -87,10 +122,11 @@ bekommen — alle im Admin-Bereich einstellbar, kein Code nötig:
 
 Gibt ein Kunde bei der Buchung eine E-Mail-Adresse an, kann die App
 automatisch eine Bestätigung verschicken — und ihn informieren, falls der
-Termin storniert wird. Dafür in der `.env` die `SMTP_*`-Variablen setzen
-(siehe `.env.example`, funktioniert z.B. mit einem Gmail-App-Passwort oder
-einem kostenlosen Anbieter wie Brevo). Ohne SMTP-Konfiguration läuft die
-App ganz normal weiter, es werden dann einfach keine E-Mails verschickt.
+Termin storniert wird. Dafür in der `.env` (bzw. den Netlify-Umgebungsvariablen)
+die `SMTP_*`-Variablen setzen (siehe `.env.example`, funktioniert z.B. mit
+einem Gmail-App-Passwort oder einem kostenlosen Anbieter wie Brevo). Ohne
+SMTP-Konfiguration läuft die App ganz normal weiter, es werden dann einfach
+keine E-Mails verschickt.
 
 Telefonnummer bleibt reine Kontaktinfo für Rückrufe — SMS-Benachrichtigung
 würde einen zusätzlichen kostenpflichtigen Anbieter (z.B. Twilio)
@@ -103,38 +139,20 @@ minus bereits vergebener Termine, minus blockierter Zeiträume (Urlaub,
 Pause). Es müssen keine Slots manuell angelegt werden — einfach
 Öffnungszeiten pflegen, der Rest läuft von selbst.
 
-## Deployment (die Seite online stellen, damit jeder zugreifen kann)
-
-Diese App ist bewusst so gebaut, dass sie sich 1:1 auf einen kostenlosen
-Hosting-Anbieter (z.B. [Render](https://render.com) oder
-[Railway](https://railway.app)) deployen lässt:
-
-1. Projekt in ein (privates) GitHub-Repository pushen.
-2. Bei Render/Railway einen neuen „Web Service“ aus dem Repo erstellen.
-3. Start-Befehl: `npm start`, Build-Befehl: `npm install`.
-4. Umgebungsvariablen aus `.env` dort als „Environment Variables“ eintragen
-   (`JWT_SECRET`, `SALON_NAME`, `TZ=Europe/Berlin`).
-5. Nach dem ersten Deploy einmalig per Konsole/Shell des Anbieters
-   `npm run set-admin-password -- <benutzer> <passwort>` ausführen.
-
-Wichtig: Die SQLite-Datenbank liegt als Datei im `data/`-Ordner. Manche
-kostenlose Hosting-Tarife setzen das Dateisystem bei jedem Neustart/Deploy
-zurück — dann gehen gespeicherte Termine verloren. Für dauerhaften Betrieb
-entweder einen Tarif mit „Persistent Disk“ wählen, oder gemeinsam beim
-Live-Schalten kurz draufschauen, dann helfe ich beim Umstieg auf eine
-extern gehostete Datenbank.
-
 ## Projektstruktur
 
 ```
-server.js              Express-Server, bindet Routen + statische Dateien
-db.js                   SQLite-Setup, Schema, Standarddaten
-lib/availability.js     Berechnung freier Termine
-routes/public.js        Öffentliche API (Leistungen, Verfügbarkeit, Buchen)
-routes/admin.js         Admin-API (Login, Termine, Öffnungszeiten, Leistungen)
-middleware/auth.js       Login-Session (JWT in httpOnly-Cookie)
-scripts/set-admin-password.js   Admin-Zugang anlegen/ändern
-public/                 Kunden-Frontend (index.html, css/, js/)
-public/admin/           Admin-Frontend (Login + Dashboard)
-data/booking.db         SQLite-Datenbankdatei (wird automatisch angelegt)
+server.js                       Express-Server für lokale Entwicklung
+netlify/functions/api.js        Gleiche API als Netlify Function für den Live-Betrieb
+netlify.toml                    Netlify-Build-/Routing-Konfiguration
+db.js                           Postgres-Verbindung (Supabase), Schema, Standarddaten
+lib/availability.js             Berechnung freier Termine
+lib/mailer.js                   E-Mail-Versand (optional, via SMTP)
+lib/asyncHandler.js             Fehlerbehandlung für async Routen
+routes/public.js                Öffentliche API (Leistungen, Verfügbarkeit, Buchen)
+routes/admin.js                 Admin-API (Login, Termine, Öffnungszeiten, Leistungen)
+middleware/auth.js              Login-Session (JWT in httpOnly-Cookie)
+scripts/set-admin-password.js   Admin-Zugang anlegen/ändern (lokal oder live, gleiche DB)
+public/                         Kunden-Frontend (index.html, css/, js/)
+public/admin/                   Admin-Frontend (Login + Dashboard)
 ```

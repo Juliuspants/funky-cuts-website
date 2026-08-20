@@ -10,6 +10,7 @@ if (!process.env.JWT_SECRET) {
   process.exit(1);
 }
 
+const { ensureSchema } = require("./db");
 const publicRoutes = require("./routes/public");
 const adminRoutes = require("./routes/admin");
 
@@ -39,6 +40,14 @@ app.get("/", (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Funky Cuts läuft auf http://localhost:${PORT}`);
-});
+
+ensureSchema()
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`Funky Cuts läuft auf http://localhost:${PORT}`);
+    });
+  })
+  .catch((err) => {
+    console.error("Datenbank-Setup fehlgeschlagen — läuft DATABASE_URL korrekt?", err.message);
+    process.exit(1);
+  });

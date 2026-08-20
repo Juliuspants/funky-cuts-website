@@ -1,7 +1,8 @@
 // Legt den Admin-Zugang an oder ändert das Passwort.
 // Benutzung: npm run set-admin-password -- <benutzername> <passwort>
+require("dotenv").config();
 const bcrypt = require("bcryptjs");
-const db = require("../db");
+const { pool, ensureSchema } = require("../db");
 
 const [, , username, password] = process.argv;
 
@@ -15,12 +16,21 @@ if (password.length < 6) {
   process.exit(1);
 }
 
-const hash = bcrypt.hashSync(password, 12);
-
-db.prepare(
-  `INSERT INTO admin (id, username, password_hash) VALUES (1, ?, ?)
-   ON CONFLICT(id) DO UPDATE SET username = excluded.username, password_hash = excluded.password_hash`
-).run(username, hash);
-
-console.log(`Admin-Zugang gespeichert. Benutzername: "${username}"`);
-console.log("Du kannst dich jetzt unter /admin anmelden.");
+(async () => {
+  try {
+    await ensureSchema();
+    const hash = bcrypt.hashSync(password, 12);
+    await pool.query(
+      `INSERT INTO admin (id, username, password_hash) VALUES (1, $1, $2)
+       ON CONFLICT (id) DO UPDATE SET username = excluded.username, password_hash = excluded.password_hash`,
+      [username, hash]
+    );
+    console.log(`Admin-Zugang gespeichert. Benutzername: "${username}"`);
+    console.log("Du kannst dich jetzt unter /admin anmelden.");
+  } catch (err) {
+    console.error("Fehler beim Speichern des Admin-Zugangs:", err.message);
+    process.exitCode = 1;
+  } finally {
+    await pool.end();
+  }
+})();
