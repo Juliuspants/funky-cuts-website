@@ -43,6 +43,7 @@
     <button class="tab-btn active" data-tab="bookings">Termine</button>
     <button class="tab-btn" data-tab="hours">Öffnungszeiten</button>
     <button class="tab-btn" data-tab="blocked">Pausen &amp; Urlaub</button>
+    <button class="tab-btn" data-tab="waitlist">Warteliste</button>
     <button class="tab-btn" data-tab="services">Leistungen</button>
     <button class="tab-btn" data-tab="settings">Terminplanung</button>
     <button class="tab-btn" data-tab="content">Startseite</button>
@@ -80,6 +81,19 @@
       <button class="btn btn-primary" id="addBlockBtn">Hinzufügen</button>
     </div>
     <div id="blockedList"></div>
+  </div>
+
+  <!-- Waitlist -->
+  <div class="tab-panel" data-panel="waitlist">
+    <div class="panel-head">
+      <h2>Warteliste</h2>
+    </div>
+    <p class="panel-note">
+      Kund*innen, die sich für einen ausgebuchten Tag eingetragen haben. Wird
+      ein Termin an diesem Tag storniert, bekommen noch nicht benachrichtigte
+      Einträge automatisch eine Mail, dass ein Platz frei geworden ist.
+    </p>
+    <div id="waitlistList"><div class="skeleton" style="height:60px; margin-bottom:10px;"></div></div>
   </div>
 
   <!-- Services -->

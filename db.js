@@ -103,6 +103,21 @@ async function runMigrations() {
       sort_order INTEGER NOT NULL DEFAULT 0,
       created_at TIMESTAMPTZ NOT NULL DEFAULT now()
     );
+
+    -- Warteliste: Kund*innen, die für einen ausgebuchten Tag benachrichtigt
+    -- werden wollen, falls doch noch ein Termin frei wird (z.B. durch Storno)
+    CREATE TABLE IF NOT EXISTS waitlist (
+      id SERIAL PRIMARY KEY,
+      service_id INTEGER REFERENCES services(id),
+      date TEXT NOT NULL,
+      customer_name TEXT NOT NULL,
+      customer_phone TEXT NOT NULL,
+      customer_email TEXT,
+      note TEXT,
+      notified INTEGER NOT NULL DEFAULT 0,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+    CREATE INDEX IF NOT EXISTS idx_waitlist_date ON waitlist(date);
   `);
 
   // Standard-Öffnungszeiten anlegen, falls noch keine existieren (Mo-Fr 9-18, Sa 9-14, So zu)

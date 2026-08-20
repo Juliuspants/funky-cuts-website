@@ -371,6 +371,45 @@ a { color: inherit; }
 .field textarea { resize: vertical; min-height: 66px; }
 .field-note { font-size: 11.5px; color: var(--ink-faint); margin-top: 6px; }
 
+.hidden { display: none !important; }
+
+/* ---------- waitlist ---------- */
+
+.waitlist-cta { margin-top: 14px; }
+.waitlist-form {
+  margin-top: 14px;
+  padding: 16px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  animation: step-in 0.3s var(--ease-out);
+}
+
+/* ---------- returning customer note ---------- */
+
+.returning-note {
+  margin: -6px 0 15px;
+  padding: 12px 14px;
+  background: var(--clay-soft);
+  border: 1px solid rgba(193, 129, 92, 0.3);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  color: var(--ink);
+  line-height: 1.5;
+  animation: step-in 0.3s var(--ease-out);
+}
+.link-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--clay);
+  font-weight: 700;
+  font-size: 13px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.link-btn:hover { color: var(--ink); }
+
 .summary-card {
   background: var(--card);
   border: 1px solid var(--line);

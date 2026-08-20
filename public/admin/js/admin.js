@@ -77,6 +77,7 @@
     loadBookings();
     loadWorkingHours();
     loadBlockedSlots();
+    loadWaitlist();
     loadServices();
     loadSchedulingSettings();
     loadContent();
@@ -278,6 +279,44 @@
       await api(`/api/admin/blocked-slots/${id}`, { method: "DELETE" });
       showToast("Blockierung entfernt.");
       loadBlockedSlots();
+    } catch (err) {
+      showToast(err.message, true);
+    }
+  }
+
+  // ---------------- Waitlist ----------------
+
+  async function loadWaitlist() {
+    const list = $("#waitlistList");
+    try {
+      const rows = await api("/api/admin/waitlist");
+      if (rows.length === 0) {
+        list.innerHTML = `<div class="empty-state">Aktuell keine Warteliste-Einträge.</div>`;
+        return;
+      }
+      list.innerHTML = rows.map((w) => `
+        <div class="waitlist-row" data-id="${w.id}">
+          <div class="info">
+            <div class="date">${formatDateHuman(w.date)}${w.notified ? `<span class="notified-badge">benachrichtigt</span>` : ""}</div>
+            <div class="meta">${escapeHtml(w.customer_name)} · ${escapeHtml(w.customer_phone)}${w.customer_email ? " · " + escapeHtml(w.customer_email) : ""}${w.service_name ? " · " + escapeHtml(w.service_name) : ""}${w.note ? " · " + escapeHtml(w.note) : ""}</div>
+          </div>
+          <button class="btn-danger" data-id="${w.id}">Entfernen</button>
+        </div>
+      `).join("");
+      list.querySelectorAll(".btn-danger").forEach((btn) => {
+        btn.addEventListener("click", () => removeWaitlistEntry(btn.dataset.id));
+      });
+    } catch (err) {
+      list.innerHTML = `<div class="empty-state">Warteliste konnte nicht geladen werden.</div>`;
+      showToast(err.message, true);
+    }
+  }
+
+  async function removeWaitlistEntry(id) {
+    try {
+      await api(`/api/admin/waitlist/${id}`, { method: "DELETE" });
+      showToast("Eintrag entfernt.");
+      loadWaitlist();
     } catch (err) {
       showToast(err.message, true);
     }

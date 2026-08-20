@@ -229,7 +229,29 @@
     const grid = $("#slotGrid");
     grid.innerHTML = "";
     if (state.slots.length === 0) {
-      grid.innerHTML = `<div class="empty-state">An diesem Tag ist leider nichts mehr frei. Bitte einen anderen Tag wählen 🙂</div>`;
+      grid.innerHTML = `
+        <div class="empty-state">An diesem Tag ist leider nichts mehr frei. Bitte einen anderen Tag wählen 🙂</div>
+        <div class="waitlist-cta">
+          <button type="button" class="btn btn-ghost btn-block" id="waitlistToggleBtn">Auf die Warteliste für diesen Tag</button>
+          <div class="waitlist-form hidden" id="waitlistForm">
+            <div class="field">
+              <label for="wlName">Name *</label>
+              <input type="text" id="wlName" placeholder="Max Mustermann" autocomplete="name" />
+            </div>
+            <div class="field">
+              <label for="wlPhone">Telefonnummer *</label>
+              <input type="tel" id="wlPhone" placeholder="0151 23456789" autocomplete="tel" />
+            </div>
+            <div class="field">
+              <label for="wlEmail">E-Mail (optional)</label>
+              <input type="email" id="wlEmail" placeholder="max@beispiel.de" autocomplete="email" />
+              <p class="field-note">Damit wir dich benachrichtigen können, falls ein Termin frei wird.</p>
+            </div>
+            <button type="button" class="btn btn-primary btn-block" id="wlSubmitBtn">Eintragen</button>
+          </div>
+        </div>
+      `;
+      wireWaitlistForm();
       return;
     }
     state.slots.forEach((slot, i) => {
@@ -245,6 +267,48 @@
         $("#toStep4").disabled = false;
       });
       grid.appendChild(btn);
+    });
+  }
+
+  function wireWaitlistForm() {
+    const toggleBtn = $("#waitlistToggleBtn");
+    const form = $("#waitlistForm");
+    if (!toggleBtn || !form) return;
+    toggleBtn.addEventListener("click", () => {
+      form.classList.toggle("hidden");
+      toggleBtn.textContent = form.classList.contains("hidden")
+        ? "Auf die Warteliste für diesen Tag"
+        : "Warteliste ausblenden";
+    });
+    $("#wlSubmitBtn").addEventListener("click", async () => {
+      const name = $("#wlName").value.trim();
+      const phone = $("#wlPhone").value.trim();
+      const email = $("#wlEmail").value.trim();
+      if (name.length < 2) return showToast("Bitte einen gültigen Namen angeben.", true);
+      if (phone.length < 5) return showToast("Bitte eine gültige Telefonnummer angeben.", true);
+
+      const btn = $("#wlSubmitBtn");
+      btn.disabled = true;
+      btn.textContent = "Wird eingetragen …";
+      try {
+        await api("/api/waitlist", {
+          method: "POST",
+          body: JSON.stringify({
+            serviceId: state.selectedService.id,
+            date: state.selectedDate,
+            name, phone,
+            email: email || undefined,
+          }),
+        });
+        showToast("Du stehst auf der Warteliste — wir melden uns, sobald etwas frei wird! 🎉");
+        form.classList.add("hidden");
+        toggleBtn.textContent = "Auf die Warteliste für diesen Tag";
+      } catch (err) {
+        showToast(err.message, true);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Eintragen";
+      }
     });
   }
 
@@ -265,6 +329,56 @@
       <div class="summary-row"><span class="label">Uhrzeit</span><span class="value">${state.selectedSlot} Uhr</span></div>
       ${svc.price_cents != null ? `<div class="summary-row"><span class="label">Preis</span><span class="value">${formatMoney(svc.price_cents)}</span></div>` : ""}
     `;
+  }
+
+  // ---------------- Wiederkehrende Kund*innen ("wie letztes Mal?") ----------------
+
+  let returningLookupTimer = null;
+  $("#phoneInput").addEventListener("input", () => {
+    clearTimeout(returningLookupTimer);
+    const phone = $("#phoneInput").value.trim();
+    if (phone.length < 6) {
+      hideReturningNote();
+      return;
+    }
+    returningLookupTimer = setTimeout(() => lookupReturningCustomer(phone), 700);
+  });
+
+  function hideReturningNote() {
+    $("#returningCustomerNote")?.classList.add("hidden");
+  }
+
+  async function lookupReturningCustomer(phone) {
+    const note = $("#returningCustomerNote");
+    if (!note) return;
+    try {
+      const res = await api(`/api/customer-lookup?phone=${encodeURIComponent(phone)}`);
+      if (!res.found) {
+        hideReturningNote();
+        return;
+      }
+      const sameService = state.selectedService && res.serviceId === state.selectedService.id;
+      if (sameService) {
+        note.innerHTML = `👋 Willkommen zurück! Wie immer: <strong>${escapeHtml(res.serviceName)}</strong> ✓`;
+      } else {
+        note.innerHTML = `👋 Willkommen zurück! Letztes Mal warst du bei uns für <strong>${escapeHtml(res.serviceName)}</strong>. <button type="button" class="link-btn" id="returningSwitchBtn">Diesen Service stattdessen buchen</button>`;
+      }
+      note.classList.remove("hidden");
+      const switchBtn = $("#returningSwitchBtn");
+      if (switchBtn) {
+        switchBtn.addEventListener("click", () => {
+          const svc = state.services.find((s) => s.id === res.serviceId);
+          if (!svc) return;
+          goToStep(1);
+          const card = document.querySelector(`.option-card[data-id="${svc.id}"]`);
+          if (card) selectService(svc, card);
+          showToast(`"${svc.name}" ausgewählt — bitte Datum & Uhrzeit neu wählen.`);
+        });
+      }
+    } catch (_) {
+      // Rein kosmetisches Feature — bei Fehlern einfach nichts anzeigen.
+      hideReturningNote();
+    }
   }
 
   $("#backStep4Btn").addEventListener("click", () => goToStep(3));
@@ -326,6 +440,7 @@
     $("#phoneInput").value = "";
     $("#emailInput").value = "";
     $("#noteInput").value = "";
+    hideReturningNote();
     $$(".option-card").forEach((c) => c.classList.remove("selected"));
     goToStep(1);
   });

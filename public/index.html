@@ -184,7 +184,11 @@
     revealEls.forEach((el) => revealObserver.observe(el));
   }
 
-  // Galerie: Karussell mit Pfeilen, Punkten und automatischem "Slideshow"-Vorlauf
+  // Galerie: Karussell mit Pfeilen, Punkten und automatischem "Slideshow"-Vorlauf.
+  // "slideIndex" ist die einzige Wahrheitsquelle für die aktuelle Position —
+  // sowohl der Autoplay als auch Pfeile/Punkte navigieren immer über exakte
+  // Ziel-Indizes (nicht über relative scrollBy-Deltas), damit nichts driftet
+  // oder am Ende einfach steckenbleibt.
   const scroll = document.getElementById("galleryScroll");
   const wrap = document.querySelector(".gallery-scroll-wrap");
   const prevBtn = document.getElementById("galleryPrev");
@@ -192,42 +196,44 @@
   const dotsEl = document.getElementById("galleryDots");
   if (scroll && wrap && prevBtn && nextBtn && dotsEl) {
     const items = () => Array.from(scroll.querySelectorAll(".gallery-item"));
+    let slideIndex = 0;
 
-    const cardStep = () => {
-      const card = scroll.querySelector(".gallery-item");
-      return card ? card.getBoundingClientRect().width + 16 : 260;
-    };
+    function updateDots() {
+      dotsEl.querySelectorAll(".gallery-dot").forEach((d, i) => d.classList.toggle("active", i === slideIndex));
+    }
 
-    const scrollByCard = (dir) => scroll.scrollBy({ left: dir * cardStep(), behavior: "smooth" });
-
-    const scrollToIndex = (idx) => {
-      const el = items()[idx];
-      if (el) scroll.scrollTo({ left: el.offsetLeft - scroll.offsetLeft, behavior: "smooth" });
-    };
+    function goToSlide(idx) {
+      const list = items();
+      if (list.length === 0) return;
+      slideIndex = ((idx % list.length) + list.length) % list.length; // sauberer Wrap in beide Richtungen
+      const el = list[slideIndex];
+      scroll.scrollTo({ left: el.offsetLeft - scroll.offsetLeft, behavior: "smooth" });
+      updateDots();
+    }
 
     function buildDots() {
-      const els = items();
-      dotsEl.innerHTML = els
+      const list = items();
+      dotsEl.innerHTML = list
         .map((_, i) => `<button class="gallery-dot" data-index="${i}" aria-label="Bild ${i + 1}"></button>`)
         .join("");
       dotsEl.querySelectorAll(".gallery-dot").forEach((dot) => {
-        dot.addEventListener("click", () => scrollToIndex(Number(dot.dataset.index)));
+        dot.addEventListener("click", () => { goToSlide(Number(dot.dataset.index)); pauseThenResume(); });
       });
-      if (els[0]) dotsEl.querySelector(".gallery-dot")?.classList.add("active");
+      updateDots();
     }
     buildDots();
 
-    // Verfolgt, welches Bild gerade am weitesten sichtbar ist, und markiert den passenden Punkt
-    let activeIndex = 0;
+    // Hält "slideIndex" auch dann synchron, wenn jemand von Hand swiped/scrollt
+    // (statt nur über Pfeile/Punkte/Autoplay zu navigieren).
     if ("IntersectionObserver" in window) {
       const indexObserver = new IntersectionObserver(
         (entries) => {
           entries.forEach((entry) => {
             if (entry.isIntersecting && entry.intersectionRatio > 0.6) {
               const idx = items().indexOf(entry.target);
-              if (idx !== -1 && idx !== activeIndex) {
-                activeIndex = idx;
-                dotsEl.querySelectorAll(".gallery-dot").forEach((d, i) => d.classList.toggle("active", i === idx));
+              if (idx !== -1 && idx !== slideIndex) {
+                slideIndex = idx;
+                updateDots();
               }
             }
           });
@@ -237,36 +243,34 @@
       items().forEach((el) => indexObserver.observe(el));
     }
 
-    prevBtn.addEventListener("click", () => scrollByCard(-1));
-    nextBtn.addEventListener("click", () => scrollByCard(1));
+    prevBtn.addEventListener("click", () => { goToSlide(slideIndex - 1); pauseThenResume(); });
+    nextBtn.addEventListener("click", () => { goToSlide(slideIndex + 1); pauseThenResume(); });
 
-    // Automatischer Slideshow-Vorlauf — pausiert bei jeder Nutzerinteraktion
-    // und läuft danach von selbst wieder an.
+    // Automatischer Slideshow-Vorlauf — pausiert nur bei echter Interaktion
+    // (Ziehen/Wischen, Pfeile, Punkte), nicht schon beim bloßen Drüberhovern,
+    // damit die Show nicht einfach stehen bleibt, sobald die Maus zufällig
+    // über der Galerie ruht.
     let autoTimer = null;
     function stopAutoplay() {
       clearInterval(autoTimer);
       autoTimer = null;
     }
     function startAutoplay() {
-      if (reduceMotion || autoTimer || items().length < 2) return;
-      autoTimer = setInterval(() => {
-        const atEnd = scroll.scrollLeft + scroll.clientWidth >= scroll.scrollWidth - 4;
-        if (atEnd) scroll.scrollTo({ left: 0, behavior: "smooth" });
-        else scrollByCard(1);
-      }, 3800);
+      if (reduceMotion || autoTimer || document.hidden || items().length < 2) return;
+      autoTimer = setInterval(() => goToSlide(slideIndex + 1), 3800);
     }
-    function pauseThenResume(delay = 4000) {
+    function pauseThenResume(delay = 4500) {
       stopAutoplay();
       clearTimeout(pauseThenResume._t);
       pauseThenResume._t = setTimeout(startAutoplay, delay);
     }
 
-    ["pointerdown", "touchstart"].forEach((ev) => scroll.addEventListener(ev, () => stopAutoplay(), { passive: true }));
+    ["pointerdown", "touchstart"].forEach((ev) => scroll.addEventListener(ev, stopAutoplay, { passive: true }));
     ["pointerup", "touchend"].forEach((ev) => scroll.addEventListener(ev, () => pauseThenResume(), { passive: true }));
-    wrap.addEventListener("mouseenter", stopAutoplay);
-    wrap.addEventListener("mouseleave", () => pauseThenResume(1200));
-    prevBtn.addEventListener("click", () => pauseThenResume());
-    nextBtn.addEventListener("click", () => pauseThenResume());
+    // Trackpad-Horizontalscroll auf der Galerie zählt ebenfalls als Interaktion
+    scroll.addEventListener("wheel", (e) => {
+      if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) pauseThenResume();
+    }, { passive: true });
     document.addEventListener("visibilitychange", () => {
       if (document.hidden) stopAutoplay();
       else startAutoplay();

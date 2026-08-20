@@ -144,4 +144,83 @@ router.post(
   })
 );
 
+// Warteliste: Kund*innen können sich für einen ausgebuchten Tag eintragen
+// und werden benachrichtigt, sobald durch eine Stornierung ein Platz frei wird.
+router.post(
+  "/waitlist",
+  asyncHandler(async (req, res) => {
+    const { serviceId, date, name, phone, email, note } = req.body || {};
+
+    if (!date || !name || !phone) {
+      return res.status(400).json({ error: "Bitte Datum, Name und Telefonnummer angeben." });
+    }
+    if (String(name).trim().length < 2) {
+      return res.status(400).json({ error: "Bitte einen gültigen Namen angeben." });
+    }
+    if (String(phone).trim().length < 5) {
+      return res.status(400).json({ error: "Bitte eine gültige Telefonnummer angeben." });
+    }
+
+    let serviceName = null;
+    if (serviceId) {
+      const { rows } = await pool.query("SELECT name FROM services WHERE id = $1", [serviceId]);
+      serviceName = rows[0]?.name || null;
+    }
+
+    const { rows: insertRows } = await pool.query(
+      `INSERT INTO waitlist (service_id, date, customer_name, customer_phone, customer_email, note)
+       VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+      [
+        serviceId || null,
+        date,
+        String(name).trim(),
+        String(phone).trim(),
+        email ? String(email).trim() : null,
+        note ? String(note).trim() : null,
+      ]
+    );
+
+    const entry = {
+      id: insertRows[0].id,
+      date,
+      serviceName,
+      customer_name: String(name).trim(),
+      customer_phone: String(phone).trim(),
+      customer_email: email ? String(email).trim() : null,
+    };
+
+    await Promise.all([
+      mailer.sendWaitlistJoined(entry).catch((err) => console.error("Warteliste-Bestätigung fehlgeschlagen:", err.message)),
+      mailer.sendAdminWaitlistNotice(entry).catch((err) => console.error("Admin-Warteliste-Benachrichtigung fehlgeschlagen:", err.message)),
+    ]);
+
+    res.status(201).json({ id: entry.id });
+  })
+);
+
+// Erkennt wiederkehrende Kund*innen anhand der Telefonnummer und schlägt die
+// zuletzt gebuchte Leistung vor ("wie letztes Mal?"). Gibt bewusst nur den
+// Namen der Leistung zurück, keine weiteren Kundendaten.
+router.get(
+  "/customer-lookup",
+  asyncHandler(async (req, res) => {
+    const phone = String(req.query.phone || "").trim();
+    const normalized = phone.replace(/\D/g, "");
+    if (normalized.length < 5) return res.json({ found: false });
+
+    const { rows } = await pool.query(
+      `SELECT s.id AS service_id, s.name AS service_name
+       FROM bookings b
+       JOIN services s ON s.id = b.service_id
+       WHERE regexp_replace(b.customer_phone, '\\D', '', 'g') = $1
+       ORDER BY b.created_at DESC
+       LIMIT 1`,
+      [normalized]
+    );
+
+    if (!rows[0]) return res.json({ found: false });
+    res.json({ found: true, serviceId: rows[0].service_id, serviceName: rows[0].service_name });
+  })
+);
+
 module.exports = router;

@@ -94,6 +94,24 @@ router.delete(
       console.error("Storno-E-Mail konnte nicht gesendet werden:", err.message);
     });
 
+    // Warteliste für diesen Tag abgleichen: noch nicht benachrichtigte
+    // Einträge für das gleiche Datum bekommen jetzt Bescheid, dass ein
+    // Termin frei geworden ist (nur einmal pro Eintrag, siehe "notified").
+    try {
+      const { rows: waiters } = await pool.query(
+        "SELECT * FROM waitlist WHERE date = $1 AND notified = 0",
+        [booking.date]
+      );
+      for (const w of waiters) {
+        await mailer.sendWaitlistSlotOpened(w).catch((err) => {
+          console.error("Warteliste-Benachrichtigung fehlgeschlagen:", err.message);
+        });
+        await pool.query("UPDATE waitlist SET notified = 1 WHERE id = $1", [w.id]);
+      }
+    } catch (err) {
+      console.error("Warteliste-Abgleich fehlgeschlagen:", err.message);
+    }
+
     res.json({ ok: true });
   })
 );
@@ -266,6 +284,30 @@ router.delete(
     }
 
     await pool.query("DELETE FROM services WHERE id = $1", [req.params.id]);
+    res.json({ ok: true });
+  })
+);
+
+// --- Warteliste --------------------------------------------------------------
+
+router.get(
+  "/waitlist",
+  asyncHandler(async (req, res) => {
+    const { rows } = await pool.query(
+      `SELECT w.*, s.name AS service_name FROM waitlist w
+       LEFT JOIN services s ON s.id = w.service_id
+       WHERE w.date >= to_char(CURRENT_DATE, 'YYYY-MM-DD')
+       ORDER BY w.date, w.created_at`
+    );
+    res.json(rows);
+  })
+);
+
+router.delete(
+  "/waitlist/:id",
+  asyncHandler(async (req, res) => {
+    const result = await pool.query("DELETE FROM waitlist WHERE id = $1", [req.params.id]);
+    if (result.rowCount === 0) return res.status(404).json({ error: "Eintrag nicht gefunden." });
     res.json({ ok: true });
   })
 );
