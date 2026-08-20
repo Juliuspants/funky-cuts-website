@@ -120,6 +120,16 @@ async function runMigrations() {
     CREATE INDEX IF NOT EXISTS idx_waitlist_date ON waitlist(date);
   `);
 
+  // waitlist.service_id darf eine Leistung nicht am Löschen hindern — ein
+  // Warteliste-Eintrag ist rein informativ, verliert beim Löschen der
+  // referenzierten Leistung einfach den Servicenamen (statt die Löschung mit
+  // einem harten FK-Fehler zu blockieren, wie es die Standardeinstellung tut).
+  await pool.query(`
+    ALTER TABLE waitlist DROP CONSTRAINT IF EXISTS waitlist_service_id_fkey;
+    ALTER TABLE waitlist ADD CONSTRAINT waitlist_service_id_fkey
+      FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE SET NULL;
+  `);
+
   // Standard-Öffnungszeiten anlegen, falls noch keine existieren (Mo-Fr 9-18, Sa 9-14, So zu)
   const { rows: whRows } = await pool.query("SELECT COUNT(*)::int AS c FROM working_hours");
   if (whRows[0].c === 0) {

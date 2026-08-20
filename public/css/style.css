@@ -635,8 +635,10 @@ a { color: inherit; }
   display: flex;
   gap: 14px;
   overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  scroll-behavior: smooth;
+  /* Kein scroll-snap hier — die Galerie läuft dauerhaft per rAF mit fester
+     Geschwindigkeit (siehe index.html); ein CSS-Snap würde dagegen ankämpfen
+     und die Bewegung ruckeln lassen. Pfeile/Punkte scrollen trotzdem exakt
+     auf die Bildkante, weil das Ziel per JS berechnet wird. */
   -webkit-overflow-scrolling: touch;
   padding: 4px 4px 14px;
   margin: -4px -4px -14px;
@@ -646,7 +648,6 @@ a { color: inherit; }
 .gallery-scroll::-webkit-scrollbar { display: none; }
 .gallery-item {
   flex: 0 0 auto;
-  scroll-snap-align: start;
   width: 220px;
   aspect-ratio: 1;
   border-radius: var(--radius-sm);

@@ -412,7 +412,6 @@
         `${state.selectedService.name} am ${formatDateHuman(state.selectedDate)} um ${state.selectedSlot} Uhr. Bis bald, ${name}!`;
       goToStep(5);
       fireConfetti();
-      resetChecksForNextBooking();
     } catch (err) {
       showToast(err.message, true);
       if (String(err.message).includes("nicht mehr verfügbar")) {
@@ -424,10 +423,6 @@
       btn.textContent = "Termin buchen";
     }
   });
-
-  function resetChecksForNextBooking() {
-    // Zustand für eine evtl. neue Buchung vorbereiten, ohne die Erfolgsseite zu stören.
-  }
 
   $("#newBookingBtn").addEventListener("click", () => {
     state.selectedService = null;

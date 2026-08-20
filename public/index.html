@@ -184,99 +184,114 @@
     revealEls.forEach((el) => revealObserver.observe(el));
   }
 
-  // Galerie: Karussell mit Pfeilen, Punkten und automatischem "Slideshow"-Vorlauf.
-  // "slideIndex" ist die einzige Wahrheitsquelle für die aktuelle Position —
-  // sowohl der Autoplay als auch Pfeile/Punkte navigieren immer über exakte
-  // Ziel-Indizes (nicht über relative scrollBy-Deltas), damit nichts driftet
-  // oder am Ende einfach steckenbleibt.
+  // Galerie: durchgehend laufendes, butterweiches Slideshow-Karussell.
+  // Läuft per requestAnimationFrame permanent mit konstanter Geschwindigkeit
+  // (statt in Sprüngen alle paar Sekunden) und loopt nahtlos, indem die
+  // komplette Bilderreihe einmal dupliziert wird — sobald der erste Satz
+  // durchgescrollt ist, springt scrollLeft unsichtbar um genau eine
+  // Satzbreite zurück, weil an der Stelle exakt dasselbe Bild wartet.
   const scroll = document.getElementById("galleryScroll");
   const wrap = document.querySelector(".gallery-scroll-wrap");
   const prevBtn = document.getElementById("galleryPrev");
   const nextBtn = document.getElementById("galleryNext");
   const dotsEl = document.getElementById("galleryDots");
   if (scroll && wrap && prevBtn && nextBtn && dotsEl) {
-    const items = () => Array.from(scroll.querySelectorAll(".gallery-item"));
-    let slideIndex = 0;
+    const originalItems = Array.from(scroll.querySelectorAll(".gallery-item"));
+    const originalCount = originalItems.length;
 
-    function updateDots() {
-      dotsEl.querySelectorAll(".gallery-dot").forEach((d, i) => d.classList.toggle("active", i === slideIndex));
+    // Für den nahtlosen Loop den kompletten Satz einmal duplizieren
+    if (originalCount >= 2) {
+      originalItems.forEach((el) => {
+        const clone = el.cloneNode(true);
+        clone.removeAttribute("id");
+        clone.setAttribute("aria-hidden", "true");
+        scroll.appendChild(clone);
+      });
     }
+    const loop = originalCount >= 2;
 
-    function goToSlide(idx) {
-      const list = items();
-      if (list.length === 0) return;
-      slideIndex = ((idx % list.length) + list.length) % list.length; // sauberer Wrap in beide Richtungen
-      const el = list[slideIndex];
-      scroll.scrollTo({ left: el.offsetLeft - scroll.offsetLeft, behavior: "smooth" });
-      updateDots();
+    // "currentIndex" ist die einzige Wahrheitsquelle für den aktiv markierten
+    // Punkt — wird sowohl bei Klicks (sofort, unabhängig vom rAF-Takt) als
+    // auch fortlaufend während der automatischen Bewegung aktualisiert.
+    let currentIndex = 0;
+
+    function setActiveDot(idx) {
+      dotsEl.querySelectorAll(".gallery-dot").forEach((d, i) => d.classList.toggle("active", i === idx));
     }
 
     function buildDots() {
-      const list = items();
-      dotsEl.innerHTML = list
+      dotsEl.innerHTML = originalItems
         .map((_, i) => `<button class="gallery-dot" data-index="${i}" aria-label="Bild ${i + 1}"></button>`)
         .join("");
       dotsEl.querySelectorAll(".gallery-dot").forEach((dot) => {
-        dot.addEventListener("click", () => { goToSlide(Number(dot.dataset.index)); pauseThenResume(); });
+        dot.addEventListener("click", () => jumpToSlide(Number(dot.dataset.index)));
       });
-      updateDots();
+      setActiveDot(0);
     }
     buildDots();
 
-    // Hält "slideIndex" auch dann synchron, wenn jemand von Hand swiped/scrollt
-    // (statt nur über Pfeile/Punkte/Autoplay zu navigieren).
-    if ("IntersectionObserver" in window) {
-      const indexObserver = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting && entry.intersectionRatio > 0.6) {
-              const idx = items().indexOf(entry.target);
-              if (idx !== -1 && idx !== slideIndex) {
-                slideIndex = idx;
-                updateDots();
-              }
-            }
-          });
-        },
-        { root: scroll, threshold: [0, 0.6, 1] }
-      );
-      items().forEach((el) => indexObserver.observe(el));
+    function singleSetWidth() {
+      return loop ? scroll.scrollWidth / 2 : scroll.scrollWidth;
+    }
+    function cardStep() {
+      const card = originalItems[0];
+      return card ? card.getBoundingClientRect().width + 14 : 234;
     }
 
-    prevBtn.addEventListener("click", () => { goToSlide(slideIndex - 1); pauseThenResume(); });
-    nextBtn.addEventListener("click", () => { goToSlide(slideIndex + 1); pauseThenResume(); });
-
-    // Automatischer Slideshow-Vorlauf — pausiert nur bei echter Interaktion
-    // (Ziehen/Wischen, Pfeile, Punkte), nicht schon beim bloßen Drüberhovern,
-    // damit die Show nicht einfach stehen bleibt, sobald die Maus zufällig
-    // über der Galerie ruht.
-    let autoTimer = null;
-    function stopAutoplay() {
-      clearInterval(autoTimer);
-      autoTimer = null;
-    }
-    function startAutoplay() {
-      if (reduceMotion || autoTimer || document.hidden || items().length < 2) return;
-      autoTimer = setInterval(() => goToSlide(slideIndex + 1), 3800);
-    }
-    function pauseThenResume(delay = 4500) {
-      stopAutoplay();
-      clearTimeout(pauseThenResume._t);
-      pauseThenResume._t = setTimeout(startAutoplay, delay);
+    // Für Pfeile/Punkte: Punkt-Markierung springt sofort um (kein Warten auf
+    // den nächsten Animationsframe), der Scroll selbst gleitet sanft nach.
+    function jumpToSlide(idx) {
+      currentIndex = ((idx % originalCount) + originalCount) % originalCount;
+      setActiveDot(currentIndex);
+      pauseFor(650);
+      const target = originalItems[currentIndex];
+      scroll.scrollTo({ left: target.offsetLeft - scroll.offsetLeft, behavior: "smooth" });
     }
 
-    ["pointerdown", "touchstart"].forEach((ev) => scroll.addEventListener(ev, stopAutoplay, { passive: true }));
-    ["pointerup", "touchend"].forEach((ev) => scroll.addEventListener(ev, () => pauseThenResume(), { passive: true }));
-    // Trackpad-Horizontalscroll auf der Galerie zählt ebenfalls als Interaktion
-    scroll.addEventListener("wheel", (e) => {
-      if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) pauseThenResume();
-    }, { passive: true });
-    document.addEventListener("visibilitychange", () => {
-      if (document.hidden) stopAutoplay();
-      else startAutoplay();
-    });
+    prevBtn.addEventListener("click", () => jumpToSlide(currentIndex - 1));
+    nextBtn.addEventListener("click", () => jumpToSlide(currentIndex + 1));
 
-    startAutoplay();
+    // Durchgehender, konstanter Vorlauf statt Sprünge — fühlt sich wie eine
+    // echte Slideshow an. Pausiert nur ganz kurz bei echtem Ziehen/Wischen,
+    // läuft ansonsten dauerhaft weiter (auch bei ruhender Maus).
+    const SPEED = 26; // px pro Sekunde — bewusst gemütlich, kein Rennen
+    let rafId = null;
+    let lastTs = null;
+    let pausedUntil = 0;
+
+    function pauseFor(ms) {
+      pausedUntil = Math.max(pausedUntil, performance.now() + ms);
+    }
+
+    function tick(ts) {
+      rafId = requestAnimationFrame(tick);
+      if (lastTs === null) lastTs = ts;
+      const dt = Math.min(ts - lastTs, 100); // deckelt große Sprünge nach Tab-Wechsel/Ruckeln
+      lastTs = ts;
+
+      if (!loop || reduceMotion || document.hidden || ts < pausedUntil) return;
+
+      scroll.scrollLeft += (SPEED * dt) / 1000;
+      const setW = singleSetWidth();
+      if (scroll.scrollLeft >= setW) scroll.scrollLeft -= setW;
+
+      const pos = ((scroll.scrollLeft % setW) + setW) % setW;
+      const idx = Math.round(pos / cardStep()) % originalCount;
+      if (idx !== currentIndex) {
+        currentIndex = idx;
+        setActiveDot(idx);
+      }
+    }
+
+    if (loop && !reduceMotion) {
+      ["pointerdown", "touchstart"].forEach((ev) => scroll.addEventListener(ev, () => pauseFor(1200), { passive: true }));
+      scroll.addEventListener("wheel", (e) => {
+        if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) pauseFor(1200);
+      }, { passive: true });
+      rafId = requestAnimationFrame(tick);
+    }
+    // Ohne Loop (0–1 Bilder) oder bei reduzierter Bewegung bleibt einfach der
+    // erste Punkt aktiv (schon von buildDots() gesetzt) — keine Bewegung nötig.
   }
 })();
 </script>

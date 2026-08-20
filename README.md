@@ -4,9 +4,15 @@ Einfache Terminbuchungs-Website für einen Friseursalon: Kunden buchen sich
 selbst einen Termin, der Salon-Betreiber verwaltet Öffnungszeiten, Pausen
 und Leistungen über einen eigenen Admin-Bereich.
 
-- **Kunden:** `/` — Leistung wählen → Tag wählen → Uhrzeit wählen → Kontaktdaten → fertig.
+- **Kunden:** `/` — Startseite mit Vorstellung, Foto-Galerie und Infos,
+  Buchung selbst läuft unter `/buchen/`: Leistung wählen → Tag wählen →
+  Uhrzeit wählen → Kontaktdaten → fertig. Ist ein Tag ausgebucht, können sich
+  Kund*innen auf eine Warteliste eintragen. Wiederkehrende Kund*innen (per
+  Telefonnummer erkannt) bekommen ihre zuletzt gebuchte Leistung vorgeschlagen.
 - **Admin:** `/admin` — Login, Termine einsehen/stornieren, Öffnungszeiten
-  einstellen, Tage blockieren (Urlaub, Pause), Leistungen verwalten.
+  einstellen, Tage blockieren (Urlaub, Pause), Warteliste verwalten,
+  Leistungen anlegen/deaktivieren/löschen, Startseiten-Texte und
+  Foto-Galerie bearbeiten.
 
 Läuft als Node/Express-App, Daten liegen in einer **Supabase-Postgres-Datenbank**
 (kostenloser Cloud-Speicher, kein lokaler Dateispeicher nötig). Gehostet wird
@@ -100,9 +106,12 @@ Beim allerersten Start werden automatisch angelegt:
   (änderbar im Admin-Bereich unter „Öffnungszeiten“).
 - Vier Beispiel-Leistungen (Herrenhaarschnitt, Waschen/Schneiden/Föhnen,
   Bart trimmen, Komplettpaket) — im Admin-Bereich unter „Leistungen“
-  anpassen, deaktivieren oder neue hinzufügen.
+  anpassen, deaktivieren, löschen (nur möglich ohne bestehende Termine) oder
+  neue hinzufügen.
 - Terminplanung: Zeitraster 30 Min., Pufferzeit 5 Min. nach jedem Termin
   (änderbar im Admin-Bereich unter „Terminplanung“).
+- Platzhaltertexte/-fotos für die Startseite (Über uns, Adresse, Galerie) —
+  im Admin-Bereich unter „Startseite“ durch echte Inhalte ersetzen.
 
 ## Terminplanung: Zeitraster, Pufferzeit, Dauer
 
@@ -121,12 +130,14 @@ bekommen — alle im Admin-Bereich einstellbar, kein Code nötig:
 ## E-Mail-Benachrichtigungen (optional)
 
 Gibt ein Kunde bei der Buchung eine E-Mail-Adresse an, kann die App
-automatisch eine Bestätigung verschicken — und ihn informieren, falls der
-Termin storniert wird. Dafür in der `.env` (bzw. den Netlify-Umgebungsvariablen)
-die `SMTP_*`-Variablen setzen (siehe `.env.example`, funktioniert z.B. mit
-einem Gmail-App-Passwort oder einem kostenlosen Anbieter wie Brevo). Ohne
-SMTP-Konfiguration läuft die App ganz normal weiter, es werden dann einfach
-keine E-Mails verschickt.
+automatisch eine Bestätigung verschicken (inkl. Ein-Klick-Buttons für Google/
+Outlook/Yahoo-Kalender sowie einer angehängten `.ics`-Datei für Apple Kalender
+& Co.) — und ihn informieren, falls der Termin storniert wird oder ein
+Warteliste-Platz frei wird. Dafür in der `.env` (bzw. den
+Netlify-Umgebungsvariablen) die `SMTP_*`-Variablen setzen (siehe
+`.env.example`, funktioniert z.B. mit einem Gmail-App-Passwort oder einem
+kostenlosen Anbieter wie Brevo). Ohne SMTP-Konfiguration läuft die App ganz
+normal weiter, es werden dann einfach keine E-Mails verschickt.
 
 Telefonnummer bleibt reine Kontaktinfo für Rückrufe — SMS-Benachrichtigung
 würde einen zusätzlichen kostenpflichtigen Anbieter (z.B. Twilio)
@@ -148,11 +159,13 @@ netlify.toml                    Netlify-Build-/Routing-Konfiguration
 db.js                           Postgres-Verbindung (Supabase), Schema, Standarddaten
 lib/availability.js             Berechnung freier Termine
 lib/mailer.js                   E-Mail-Versand (optional, via SMTP)
+lib/calendar.js                 Kalender-Links (Google/Outlook/Yahoo) + .ics-Datei fürs Attachment
 lib/asyncHandler.js             Fehlerbehandlung für async Routen
-routes/public.js                Öffentliche API (Leistungen, Verfügbarkeit, Buchen)
-routes/admin.js                 Admin-API (Login, Termine, Öffnungszeiten, Leistungen)
+routes/public.js                Öffentliche API (Leistungen, Verfügbarkeit, Buchen, Warteliste, Startseiten-Inhalte)
+routes/admin.js                 Admin-API (Login, Termine, Öffnungszeiten, Warteliste, Leistungen, Startseiten-Inhalte)
 middleware/auth.js              Login-Session (JWT in httpOnly-Cookie)
 scripts/set-admin-password.js   Admin-Zugang anlegen/ändern (lokal oder live, gleiche DB)
-public/                         Kunden-Frontend (index.html, css/, js/)
+public/index.html               Startseite (Vorstellung, Galerie, Infos)
+public/buchen/                  Buchungsstrecke (Kunden-Frontend)
 public/admin/                   Admin-Frontend (Login + Dashboard)
 ```
