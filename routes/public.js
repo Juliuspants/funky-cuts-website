@@ -92,11 +92,17 @@ router.post(
       endTime,
     };
 
-    res.status(201).json(booking);
+    // Wird vor der Antwort abgewartet (nicht "fire and forget") — in einer
+    // Serverless-Function kann die Ausführungsumgebung direkt nach der
+    // Antwort eingefroren werden, ein danach laufender Mail-Versand hätte
+    // dann keine Garantie mehr, überhaupt fertig zu laufen. Ein Mail-Fehler
+    // lässt die Buchung selbst trotzdem nie fehlschlagen.
+    await Promise.all([
+      mailer.sendBookingConfirmation(booking).catch((err) => console.error("Bestätigungs-E-Mail fehlgeschlagen:", err.message)),
+      mailer.sendAdminNewBookingNotice(booking).catch((err) => console.error("Admin-Benachrichtigung fehlgeschlagen:", err.message)),
+    ]);
 
-    // Läuft nach der Antwort — ein langsamer/fehlender Mailserver darf die Buchung selbst nie verzögern oder blockieren.
-    mailer.sendBookingConfirmation(booking).catch((err) => console.error("Bestätigungs-E-Mail fehlgeschlagen:", err.message));
-    mailer.sendAdminNewBookingNotice(booking).catch((err) => console.error("Admin-Benachrichtigung fehlgeschlagen:", err.message));
+    res.status(201).json(booking);
   })
 );
 

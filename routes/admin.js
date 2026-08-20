@@ -87,13 +87,14 @@ router.delete(
     if (!booking) return res.status(404).json({ error: "Termin nicht gefunden." });
 
     await pool.query("UPDATE bookings SET status = 'cancelled' WHERE id = $1", [req.params.id]);
-    res.json({ ok: true });
 
-    // Kunde informieren, falls eine E-Mail hinterlegt ist. Läuft nach der Antwort,
-    // damit ein langsamer/fehlender Mailserver die Stornierung selbst nie blockiert.
-    mailer.sendCancellationEmail(booking).catch((err) => {
+    // Wird vor der Antwort abgewartet (siehe Kommentar bei POST /bookings) —
+    // ein Mail-Fehler lässt die Stornierung selbst trotzdem nie fehlschlagen.
+    await mailer.sendCancellationEmail(booking).catch((err) => {
       console.error("Storno-E-Mail konnte nicht gesendet werden:", err.message);
     });
+
+    res.json({ ok: true });
   })
 );
 
@@ -250,7 +251,21 @@ router.put(
 router.delete(
   "/services/:id",
   asyncHandler(async (req, res) => {
-    await pool.query("UPDATE services SET active = 0 WHERE id = $1", [req.params.id]);
+    const { rows } = await pool.query("SELECT id FROM services WHERE id = $1", [req.params.id]);
+    if (!rows[0]) return res.status(404).json({ error: "Dienstleistung nicht gefunden." });
+
+    const { rows: bookingRows } = await pool.query(
+      "SELECT COUNT(*)::int AS c FROM bookings WHERE service_id = $1",
+      [req.params.id]
+    );
+    if (bookingRows[0].c > 0) {
+      return res.status(409).json({
+        error:
+          "Diese Leistung hat bereits Termine (auch vergangene/stornierte) und kann deshalb nicht endgültig gelöscht werden — bitte stattdessen deaktivieren.",
+      });
+    }
+
+    await pool.query("DELETE FROM services WHERE id = $1", [req.params.id]);
     res.json({ ok: true });
   })
 );

@@ -294,10 +294,14 @@
             <div class="meta">${s.duration_minutes} Min. · ${formatMoney(s.price_cents)}${s.active ? "" : " · deaktiviert"}</div>
           </div>
           <button class="btn-ghost toggle-active-btn" data-id="${s.id}" data-active="${s.active}">${s.active ? "Deaktivieren" : "Aktivieren"}</button>
+          <button class="btn-danger delete-svc-btn" data-id="${s.id}" data-name="${escapeHtml(s.name)}">Löschen</button>
         </div>
       `).join("");
       list.querySelectorAll(".toggle-active-btn").forEach((btn) => {
         btn.addEventListener("click", () => toggleServiceActive(btn.dataset.id, btn.dataset.active === "1"));
+      });
+      list.querySelectorAll(".delete-svc-btn").forEach((btn) => {
+        btn.addEventListener("click", () => deleteService(btn.dataset.id, btn.dataset.name));
       });
     } catch (err) {
       list.innerHTML = `<div class="empty-state">Leistungen konnten nicht geladen werden.</div>`;
@@ -313,6 +317,18 @@
       });
       loadServices();
     } catch (err) {
+      showToast(err.message, true);
+    }
+  }
+
+  async function deleteService(id, name) {
+    if (!confirm(`"${name}" endgültig löschen? Das kann nicht rückgängig gemacht werden.`)) return;
+    try {
+      await api(`/api/admin/services/${id}`, { method: "DELETE" });
+      showToast("Leistung gelöscht.");
+      loadServices();
+    } catch (err) {
+      // Hat die Leistung schon Termine, blockt der Server das endgültige Löschen bewusst ab.
       showToast(err.message, true);
     }
   }

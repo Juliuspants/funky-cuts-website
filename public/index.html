@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Funky Cuts — Termin buchen</title>
+<title>Funky Cuts — Barbershop</title>
+<meta name="description" content="Funky Cuts — dein Barbershop. Termine bequem online buchen." />
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💈</text></svg>" />
 <link rel="stylesheet" href="/css/style.css" />
 </head>
@@ -11,9 +12,9 @@
 
 <div class="stripe-bar"></div>
 
-<div class="page">
+<div class="page home-page">
   <div class="topbar">
-    <div class="brand">
+    <a class="brand" href="/" aria-label="Zur Startseite">
       <svg class="brand-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
         <circle cx="12" cy="14" r="6" stroke="currentColor" stroke-width="3"/>
         <circle cx="12" cy="34" r="6" stroke="currentColor" stroke-width="3"/>
@@ -21,121 +22,67 @@
         <path d="M22 24L26 24" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
       </svg>
       <span class="brand-mark display">Funky <span class="hl">Cuts</span></span>
-    </div>
+    </a>
     <a class="admin-link" href="/admin">Admin</a>
   </div>
 
   <div class="page-body">
 
-  <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
-  <div class="progress-steps">
-    <span class="progress-step" data-step="1">Service</span>
-    <span class="progress-step" data-step="2">Datum</span>
-    <span class="progress-step" data-step="3">Uhrzeit</span>
-    <span class="progress-step" data-step="4">Kontakt</span>
-  </div>
+    <!-- Hero -->
+    <section class="hero">
+      <h1 class="hero-title display">Frischer Schnitt,<br />gute Laune.</h1>
+      <p class="hero-text">
+        <!-- Platzhaltertext — durch echten Vorstellungstext ersetzen, sobald vorhanden -->
+        Funky Cuts ist dein Barbershop für Haarschnitt, Bart und alles dazwischen.
+        Entspannte Atmosphäre, ehrliche Beratung, sauberes Handwerk.
+      </p>
+      <a class="btn btn-primary btn-lg" href="/buchen/">Termin buchen</a>
+    </section>
 
-  <div class="step-viewport">
+    <!-- About -->
+    <section class="section">
+      <h2 class="section-title display">Über uns</h2>
+      <p class="section-text">
+        <!-- Platzhaltertext — bitte durch echten Text über den Salon/Barber ersetzen -->
+        [Platzhalter: kurzer Text über Funky Cuts — wer steckt dahinter, seit wann gibt's
+        den Laden, was macht euch besonders? Schick mir den Text, dann kommt er hier rein.]
+      </p>
+    </section>
 
-    <!-- Step 1: Service -->
-    <section class="step active" data-step="1">
-      <h2 class="step-title">Was darf's sein?</h2>
-      <p class="step-hint">Wähle eine Leistung aus.</p>
-      <div class="option-grid" id="serviceList">
-        <div class="skeleton" style="height:64px"></div>
-        <div class="skeleton" style="height:64px"></div>
-        <div class="skeleton" style="height:64px"></div>
-      </div>
-      <div class="nav-row">
-        <button class="btn btn-primary btn-block" id="toStep2" disabled>Weiter</button>
+    <!-- Gallery -->
+    <section class="section">
+      <h2 class="section-title display">Vorher &amp; Nachher</h2>
+      <p class="section-text">Ein paar Eindrücke aus dem Shop.</p>
+      <div class="gallery-grid">
+        <div class="gallery-item" id="gallery-1"><span class="gallery-label">Foto folgt</span></div>
+        <div class="gallery-item" id="gallery-2"><span class="gallery-label">Foto folgt</span></div>
+        <div class="gallery-item" id="gallery-3"><span class="gallery-label">Foto folgt</span></div>
+        <div class="gallery-item" id="gallery-4"><span class="gallery-label">Foto folgt</span></div>
+        <div class="gallery-item" id="gallery-5"><span class="gallery-label">Foto folgt</span></div>
+        <div class="gallery-item" id="gallery-6"><span class="gallery-label">Foto folgt</span></div>
       </div>
     </section>
 
-    <!-- Step 2: Date -->
-    <section class="step" data-step="2">
-      <h2 class="step-title">Wann passt es dir?</h2>
-      <p class="step-hint">Wähle einen Tag aus.</p>
-
-      <div class="calendar-header">
-        <button class="icon-btn" id="prevMonth" aria-label="Vorheriger Monat">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </button>
-        <span class="calendar-title" id="calendarTitle">Monat</span>
-        <button class="icon-btn" id="nextMonth" aria-label="Nächster Monat">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </button>
-      </div>
-      <div class="weekday-row">
-        <span>Mo</span><span>Di</span><span>Mi</span><span>Do</span><span>Fr</span><span>Sa</span><span>So</span>
-      </div>
-      <div class="calendar-grid-wrap">
-        <div class="day-grid" id="dayGrid"></div>
-      </div>
-
-      <div class="nav-row">
-        <button class="btn btn-ghost" id="backStep2Btn">Zurück</button>
-        <button class="btn btn-primary" id="toStep3" disabled>Weiter</button>
-      </div>
-    </section>
-
-    <!-- Step 3: Time -->
-    <section class="step" data-step="3">
-      <h2 class="step-title">Uhrzeit wählen</h2>
-      <p class="step-hint" id="timeHint">Verfügbare Zeiten für den ausgewählten Tag.</p>
-      <div class="slot-grid" id="slotGrid"></div>
-      <div class="nav-row">
-        <button class="btn btn-ghost" id="backStep3Btn">Zurück</button>
-        <button class="btn btn-primary" id="toStep4" disabled>Weiter</button>
-      </div>
-    </section>
-
-    <!-- Step 4: Contact -->
-    <section class="step" data-step="4">
-      <h2 class="step-title">Fast geschafft</h2>
-      <p class="step-hint">Deine Kontaktdaten für die Bestätigung.</p>
-
-      <div class="summary-card" id="summaryCard"></div>
-
-      <div class="field">
-        <label for="nameInput">Name *</label>
-        <input type="text" id="nameInput" placeholder="Max Mustermann" autocomplete="name" />
-      </div>
-      <div class="field">
-        <label for="phoneInput">Telefonnummer *</label>
-        <input type="tel" id="phoneInput" placeholder="0151 23456789" autocomplete="tel" />
-      </div>
-      <div class="field">
-        <label for="emailInput">E-Mail (optional)</label>
-        <input type="email" id="emailInput" placeholder="max@beispiel.de" autocomplete="email" />
-        <p class="field-note">Für die Terminbestätigung und falls sich mal was ändert.</p>
-      </div>
-      <div class="field">
-        <label for="noteInput">Anmerkung (optional)</label>
-        <textarea id="noteInput" placeholder="z. B. besondere Wünsche"></textarea>
-      </div>
-
-      <div class="nav-row">
-        <button class="btn btn-ghost" id="backStep4Btn">Zurück</button>
-        <button class="btn btn-primary" id="submitBooking">Termin buchen</button>
-      </div>
-    </section>
-
-    <!-- Step 5: Success -->
-    <section class="step" data-step="5">
-      <div class="success-wrap">
-        <div class="check-circle">
-          <svg viewBox="0 0 100 100">
-            <circle class="ring" cx="50" cy="50" r="42" />
-            <path class="tick" d="M32 52l13 13 24-27" />
-          </svg>
+    <!-- Info / Contact -->
+    <section class="section">
+      <h2 class="section-title display">Besuch uns</h2>
+      <div class="info-grid">
+        <div class="info-card">
+          <span class="info-label">Adresse</span>
+          <!-- Platzhalter — durch echte Adresse ersetzen -->
+          <span class="info-value">[Platzhalter-Straße 1]<br />[PLZ] [Ort]</span>
         </div>
-        <div class="success-title">Termin gebucht!</div>
-        <div class="success-text" id="successDetails">Wir freuen uns auf dich.</div>
-        <button class="btn btn-primary" id="newBookingBtn">Weiteren Termin buchen</button>
+        <div class="info-card">
+          <span class="info-label">Öffnungszeiten</span>
+          <span class="info-value" id="hoursValue">Wird geladen …</span>
+        </div>
+        <div class="info-card">
+          <span class="info-label">Kontakt</span>
+          <span class="info-value"><a id="contactEmailLink" href="#"></a></span>
+        </div>
       </div>
+      <a class="btn btn-primary btn-lg" href="/buchen/" style="margin-top: 28px;">Jetzt Termin buchen</a>
     </section>
-
-  </div>
 
   </div>
 
@@ -146,8 +93,44 @@
   </footer>
 </div>
 
-<div class="toast" id="toast"></div>
+<script>
+(async () => {
+  const WEEKDAY_NAMES = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
+  try {
+    const [cfg, hours] = await Promise.all([
+      fetch("/api/config").then((r) => r.json()),
+      fetch("/api/working-hours").then((r) => r.json()),
+    ]);
 
-<script src="/js/booking.js"></script>
+    if (cfg.contactEmail) {
+      document.querySelectorAll("#footerEmail, #contactEmailLink").forEach((el) => {
+        el.href = `mailto:${cfg.contactEmail}`;
+        el.textContent = cfg.contactEmail;
+      });
+    }
+
+    // Aufeinanderfolgende Wochentage mit gleichem Status zu einer Zeile zusammenfassen (z.B. "Mo–Fr")
+    const order = [1, 2, 3, 4, 5, 6, 0];
+    const byWeekday = Object.fromEntries(hours.map((h) => [h.weekday, h]));
+    const lines = [];
+    let i = 0;
+    while (i < order.length) {
+      const start = i;
+      const wd = order[i];
+      const closed = byWeekday[wd]?.closed;
+      while (i + 1 < order.length && !!byWeekday[order[i + 1]]?.closed === !!closed) i++;
+      const label = start === i ? WEEKDAY_NAMES[order[start]] : `${WEEKDAY_NAMES[order[start]]}–${WEEKDAY_NAMES[order[i]]}`;
+      lines.push(`${label}: ${closed ? "geschlossen" : "geöffnet"}`);
+      i++;
+    }
+    const hoursEl = document.getElementById("hoursValue");
+    if (hoursEl) hoursEl.innerHTML = lines.join("<br />");
+  } catch (_) {
+    const hoursEl = document.getElementById("hoursValue");
+    if (hoursEl) hoursEl.textContent = "Aktuell nicht verfügbar.";
+  }
+})();
+</script>
+
 </body>
 </html>
