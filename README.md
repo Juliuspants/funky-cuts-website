@@ -107,11 +107,14 @@ Beim allerersten Start werden automatisch angelegt:
 - Vier Beispiel-Leistungen (Herrenhaarschnitt, Waschen/Schneiden/Föhnen,
   Bart trimmen, Komplettpaket) — im Admin-Bereich unter „Leistungen“
   anpassen, deaktivieren, löschen (nur möglich ohne bestehende Termine) oder
-  neue hinzufügen.
+  neue hinzufügen. Preise werden nur intern gepflegt und tauchen nirgends auf
+  der Website auf.
 - Terminplanung: Zeitraster 30 Min., Pufferzeit 5 Min. nach jedem Termin
   (änderbar im Admin-Bereich unter „Terminplanung“).
-- Platzhaltertexte/-fotos für die Startseite (Über uns, Adresse, Galerie) —
-  im Admin-Bereich unter „Startseite“ durch echte Inhalte ersetzen.
+- Platzhaltertexte/-fotos für die Startseite (Über uns, Galerie) — im
+  Admin-Bereich unter „Startseite“ durch echte Inhalte ersetzen. Die Adresse
+  wird dort ebenfalls gepflegt, erscheint aber bewusst nicht auf der Website,
+  sondern nur in der Terminbestätigungsmail.
 
 ## Terminplanung: Zeitraster, Pufferzeit, Dauer
 

@@ -9,8 +9,10 @@ const router = express.Router();
 router.get(
   "/services",
   asyncHandler(async (req, res) => {
+    // Preise werden auf der Website bewusst nicht angezeigt — price_cents
+    // bleibt daher außen vor (nur die Admin-API liefert ihn zur Verwaltung).
     const { rows } = await pool.query(
-      "SELECT id, name, duration_minutes, price_cents FROM services WHERE active = 1 ORDER BY sort_order, id"
+      "SELECT id, name, duration_minutes FROM services WHERE active = 1 ORDER BY sort_order, id"
     );
     res.json(rows);
   })
@@ -27,14 +29,17 @@ router.get(
 router.get(
   "/content",
   asyncHandler(async (req, res) => {
-    const { rows } = await pool.query("SELECT key, value FROM site_content");
+    // Die Adresse steht bewusst NICHT hier drin — sie soll nicht öffentlich
+    // auf der Website erscheinen, sondern nur in der Bestätigungsmail (siehe
+    // POST /bookings unten, das sie direkt aus der DB lädt).
+    const { rows } = await pool.query(
+      "SELECT key, value FROM site_content WHERE key IN ('hero_title', 'hero_text', 'about_text')"
+    );
     const byKey = Object.fromEntries(rows.map((r) => [r.key, r.value]));
     res.json({
       heroTitle: byKey.hero_title || "",
       heroText: byKey.hero_text || "",
       aboutText: byKey.about_text || "",
-      addressLine1: byKey.address_line1 || "",
-      addressLine2: byKey.address_line2 || "",
     });
   })
 );
@@ -117,8 +122,9 @@ router.post(
       endTime,
     };
 
-    // Adresse für den Kalender-Eintrag (LOCATION) in der Bestätigungsmail —
-    // wird nur für den Mailversand gebraucht, nicht in der API-Antwort.
+    // Die Adresse steht bewusst nicht auf der Website, sondern nur in der
+    // Bestätigungsmail (Kalender-Eintrag + Textzeile) — wird nur für den
+    // Mailversand gebraucht, nicht in der API-Antwort.
     let location = "";
     try {
       const { rows: addrRows } = await pool.query(
@@ -127,7 +133,7 @@ router.post(
       const byKey = Object.fromEntries(addrRows.map((r) => [r.key, r.value]));
       location = [byKey.address_line1, byKey.address_line2].filter(Boolean).join(", ");
     } catch (_) {
-      // Adresse ist rein kosmetisch für den Kalendereintrag — bei Problemen einfach weglassen.
+      // Adresse ist rein kosmetisch für die Mail — bei Problemen einfach weglassen.
     }
 
     // Wird vor der Antwort abgewartet (nicht "fire and forget") — in einer

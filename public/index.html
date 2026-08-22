@@ -72,10 +72,6 @@
       <h2 class="section-title display">Besuch uns</h2>
       <div class="info-grid">
         <div class="info-card">
-          <span class="info-label">Adresse</span>
-          <span class="info-value" id="addressValue">Wird geladen …</span>
-        </div>
-        <div class="info-card">
           <span class="info-label">Öffnungszeiten</span>
           <span class="info-value" id="hoursValue">Wird geladen …</span>
         </div>
@@ -125,10 +121,6 @@
     }
     if (content.heroText) document.getElementById("heroText").textContent = content.heroText;
     if (content.aboutText) document.getElementById("aboutText").textContent = content.aboutText;
-    const addressEl = document.getElementById("addressValue");
-    if (addressEl && (content.addressLine1 || content.addressLine2)) {
-      addressEl.innerHTML = `${escapeHtml(content.addressLine1)}<br />${escapeHtml(content.addressLine2)}`;
-    }
 
     // Aufeinanderfolgende Wochentage mit gleichem Status zu einer Zeile zusammenfassen (z.B. "Mo–Fr")
     const order = [1, 2, 3, 4, 5, 6, 0];
