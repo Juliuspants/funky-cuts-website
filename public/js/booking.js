@@ -23,6 +23,11 @@
   function toDateStr(d) { return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; }
   function todayStr() { return toDateStr(new Date()); }
 
+  function formatMoney(cents) {
+    if (cents == null) return "";
+    return (cents / 100).toLocaleString("de-DE", { style: "currency", currency: "EUR" });
+  }
+
   function formatDateHuman(dateStr) {
     const [y, m, d] = dateStr.split("-").map(Number);
     const date = new Date(y, m - 1, d);
@@ -92,6 +97,7 @@
           <span class="option-meta">${svc.duration_minutes} Min.</span>
         </div>
         <div style="display:flex; align-items:center; gap:12px;">
+          <span class="option-price">${formatMoney(svc.price_cents)}</span>
           <span class="check-badge">
             <svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </span>
@@ -321,6 +327,7 @@
       <div class="summary-row"><span class="label">Leistung</span><span class="value">${escapeHtml(svc.name)}</span></div>
       <div class="summary-row"><span class="label">Datum</span><span class="value">${formatDateHuman(state.selectedDate)}</span></div>
       <div class="summary-row"><span class="label">Uhrzeit</span><span class="value">${state.selectedSlot} Uhr</span></div>
+      ${svc.price_cents != null ? `<div class="summary-row"><span class="label">Preis</span><span class="value">${formatMoney(svc.price_cents)}</span></div>` : ""}
     `;
   }
 

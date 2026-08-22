@@ -9,10 +9,8 @@ const router = express.Router();
 router.get(
   "/services",
   asyncHandler(async (req, res) => {
-    // Preise werden auf der Website bewusst nicht angezeigt — price_cents
-    // bleibt daher außen vor (nur die Admin-API liefert ihn zur Verwaltung).
     const { rows } = await pool.query(
-      "SELECT id, name, duration_minutes FROM services WHERE active = 1 ORDER BY sort_order, id"
+      "SELECT id, name, duration_minutes, price_cents FROM services WHERE active = 1 ORDER BY sort_order, id"
     );
     res.json(rows);
   })
